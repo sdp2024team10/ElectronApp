@@ -1,3 +1,8 @@
+getting started:
+- make sure you have npm: https://nodejs.org/en
+- clone the repo to your local: git clone https://github.com/sdp2024team10/ElectronApp
+- npm install
+
 to run the app:
 npm start
 
