@@ -10,7 +10,11 @@
     <link rel="stylesheet" href="../node_modules/katex/dist/katex.min.css">
 </head>
 <body>
-    <div id="latex-output"></div> <!-- LaTeX output will be rendered here -->
+    <div id="header">Algebraic Debugger</div>
+    <div id="error-message">Error Detected in Line 2!</div>
+    <div id="line1" class="math-line">line 1: x(x+5)</div> <!-- LaTeX output will be rendered here -->
+    <div id="line2" class="math-line">line 2: x^3 + 5x</div> <!-- LaTeX output will be rendered here -->
+    <div id="explanation-title">Here is why it is incorrect:</div>
     <div id="math-explanation"></div> <!-- LLM output will be displayed here -->
     <script src="../node_modules/katex/dist/katex.min.js"></script> <!-- KaTeX library -->
     <script src="LLM.js"></script>

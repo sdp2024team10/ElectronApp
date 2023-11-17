@@ -10,16 +10,42 @@ body {
     padding: 1.5rem;
 }
 
-#latex-output {
-    padding: 20px;
+#header {
+    background-color: lightblue;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+#error-message {
+    color: red;
+    font-size: 20px;
+    margin-top: 20px;
+    text-align: center;
+}
+
+.math-line {
+    margin-top: 10px;
+    font-size: 18px;
+    padding: 10px;
     background-color: #fff;
     border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+#explanation-title {
     margin-top: 20px;
+    font-size: 20px;
+    font-weight: bold;
+    text-align: center;
 }
 
 #math-explanation {
-    margin-top: 20px;
+    margin-top: 10px;
     padding: 15px;
     background-color: #eef;
     border: 1px solid #dde;
+    border-radius: 5px;
 }
