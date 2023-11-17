@@ -16,3 +16,10 @@ body {
     border: 1px solid #ddd;
     margin-top: 20px;
 }
+
+#math-explanation {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #eef;
+    border: 1px solid #dde;
+}
