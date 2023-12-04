@@ -1,56 +1,140 @@
 <!DOCTYPE html>
 <html>
+
 <head>
+  <link rel="stylesheet" type="text/css" href="../src/main.css">
   <link rel="stylesheet" type="text/css" href="../node_modules/mathquill/build/mathquill.css">
   <script type="text/javascript" src="../src/jquery1.7.2.min.js"></script>
   <script type="text/javascript" src="../node_modules/mathquill/build/mathquill.js"></script>
 </head>
+
+<style>
+  html * {
+    font-size: 1rem;
+    color: #000;
+    font-family: Arial;
+  }
+
+  #options input[type="number"] {
+    width: 50px;
+  }
+
+  #variable-name {
+    width: 15px;
+  }
+
+  .mq-math-mode {
+    min-width: 300px;
+  }
+
+  .mq-math-mode * {
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    font-size: 2rem;
+  }
+</style>
+
 <body>
 
-  <div id="math-fields-container">
-    <!-- Container for math fields -->
+  <!-- Global Options Interface -->
+  <div id="options">
+    <!-- Inputs for the single unknown variable -->
+    <div id="unknown-variable">
+      <label>Name: <input type="text" id="variable-name" value="x"></label><br>
+      <label>Sample Start: <input type="number" id="sample-start" value="0"></label><br>
+      <label>Sample End: <input type="number" id="sample-end" value="10"></label><br>
+      <label>Number of Samples: <input type="number" id="num-samples" value="400"></label><br>
+      <label>Sample Spacing:
+        <select id="sample-spacing">
+          <option value="">Select...</option>
+          <option value="log">Logarithmic</option>
+          <option value="linear" selected>Linear</option>
+        </select>
+      </label>
+    </div>
+
+    <div>
+      <label>Min Difference Detect Error: <input type="number" id="min-difference-detect-error" value="0.1"></label>
+    </div>
   </div>
-  <button id="add-math-field">Add Math Field</button>
+
+  <!-- Expressions Interface -->
+  <div id="expressions-container"></div>
+
+  <!-- JSON Output -->
+  <div id="json-output"></div>
 
   <script>
     var MQ = MathQuill.getInterface(2);
-    var mathFields = []; // Array to store math field objects
-    var latexStrings = []; // Array to store LaTeX strings
+    var expressions = [];
+    var options = {
+      unknown_variables: [{
+        name: '',
+        sample_start: 0,
+        sample_end: 0,
+        num_samples: 0,
+        sample_spacing: ''
+      }],
+      min_difference_detect_error: null,
+      expressions: []
+    };
 
-    // Function to create a new math field
-    function createMathField() {
-      var fieldContainer = document.createElement('div');
-      var mathFieldSpan = document.createElement('span');
-      var latexSpan = document.createElement('code');
+    function updateJSONOutput() {
+      document.getElementById('json-output').textContent = JSON.stringify(options, null, 2);
+    }
 
-      fieldContainer.appendChild(mathFieldSpan);
-      fieldContainer.appendChild(latexSpan);
-      document.getElementById('math-fields-container').appendChild(fieldContainer);
+    function addExpression() {
+      var container = document.createElement('div');
+      var expressionSpan = document.createElement('span');
 
-      var mathField = MQ.MathField(mathFieldSpan, {
+      container.appendChild(expressionSpan);
+      document.getElementById('expressions-container').appendChild(container);
+
+      var mathField = MQ.MathField(expressionSpan, {
         spaceBehavesLikeTab: true,
         handlers: {
-          edit: function() {
+          edit: function () {
             var latex = mathField.latex();
-            latexSpan.textContent = latex;
-            updateLatexInMemory(mathField, latex);
+            updateExpressionsArray(mathField, latex);
           }
         }
       });
 
-      mathFields.push(mathField);
+      expressions.push(mathField);
+      options.expressions.push(''); // Initialize with empty string
+      updateJSONOutput();
     }
 
-    // Function to update LaTeX string in memory
-    function updateLatexInMemory(mathField, latex) {
-      var index = mathFields.indexOf(mathField);
-      latexStrings[index] = latex;
+    function updateExpressionsArray(mathField, latex) {
+      var index = expressions.indexOf(mathField);
+      options.expressions[index] = latex;
+      updateJSONOutput();
     }
 
-    // Event listener for button
-    document.getElementById('add-math-field').addEventListener('click', function() {
-      createMathField();
+    function updateOptions() {
+      options.unknown_variables[0] = {
+        name: document.getElementById('variable-name').value,
+        sample_start: parseFloat(document.getElementById('sample-start').value),
+        sample_end: parseFloat(document.getElementById('sample-end').value),
+        num_samples: parseInt(document.getElementById('num-samples').value, 10),
+        sample_spacing: document.getElementById('sample-spacing').value
+      };
+      options.min_difference_detect_error = parseFloat(document.getElementById('min-difference-detect-error').value);
+      updateJSONOutput();
+    }
+
+    document.querySelectorAll('#options input, #options select').forEach(input => {
+      input.addEventListener('change', updateOptions);
     });
+
+
+    function InitializeExpressions() {
+      for (var i=0; i<10; i++) {
+        addExpression()
+      }
+    }
+    // Initialize one expression field on page load
+    window.onload = InitializeExpressions;
   </script>
 </body>
+
 </html>
