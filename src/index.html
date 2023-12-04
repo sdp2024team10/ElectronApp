@@ -1,23 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Algebraic Debugger</title>
-    <link rel="stylesheet" href="main.css" />
-    <!-- KaTeX CSS -->
-    <link rel="stylesheet" href="../node_modules/katex/dist/katex.min.css">
+  <link rel="stylesheet" type="text/css" href="../node_modules/mathquill/build/mathquill.css">
+  <script type="text/javascript" src="../src/jquery1.7.2.min.js"></script>
+  <script type="text/javascript" src="../node_modules/mathquill/build/mathquill.js"></script>
 </head>
 <body>
-    <div id="header">Algebraic Debugger</div>
-    <div id="error-message">Error Detected in Line 2!</div>
-    <div id="line1" class="math-line">line 1: x(x+5)</div> <!-- LaTeX output will be rendered here -->
-    <div id="line2" class="math-line">line 2: x^3 + 5x</div> <!-- LaTeX output will be rendered here -->
-    <div id="explanation-title">Here is why it is incorrect:</div>
-    <div id="math-explanation"></div> <!-- LLM output will be displayed here -->
-    <script src="../node_modules/katex/dist/katex.min.js"></script> <!-- KaTeX library -->
-    <script src="LLM.js"></script>
-    <script src="script.js"></script>
+
+  <div id="math-fields-container">
+    <!-- Container for math fields -->
+  </div>
+  <button id="add-math-field">Add Math Field</button>
+
+  <script>
+    var MQ = MathQuill.getInterface(2);
+    var mathFields = []; // Array to store math field objects
+    var latexStrings = []; // Array to store LaTeX strings
+
+    // Function to create a new math field
+    function createMathField() {
+      var fieldContainer = document.createElement('div');
+      var mathFieldSpan = document.createElement('span');
+      var latexSpan = document.createElement('code');
+
+      fieldContainer.appendChild(mathFieldSpan);
+      fieldContainer.appendChild(latexSpan);
+      document.getElementById('math-fields-container').appendChild(fieldContainer);
+
+      var mathField = MQ.MathField(mathFieldSpan, {
+        spaceBehavesLikeTab: true,
+        handlers: {
+          edit: function() {
+            var latex = mathField.latex();
+            latexSpan.textContent = latex;
+            updateLatexInMemory(mathField, latex);
+          }
+        }
+      });
+
+      mathFields.push(mathField);
+    }
+
+    // Function to update LaTeX string in memory
+    function updateLatexInMemory(mathField, latex) {
+      var index = mathFields.indexOf(mathField);
+      latexStrings[index] = latex;
+    }
+
+    // Event listener for button
+    document.getElementById('add-math-field').addEventListener('click', function() {
+      createMathField();
+    });
+  </script>
 </body>
 </html>
