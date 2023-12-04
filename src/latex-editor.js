@@ -1,3 +1,16 @@
+/*
+requires HTML elements with the following IDs:
+  options
+    variable-name
+    sample-start
+    sample-end
+    num-samples
+    sample-spacing
+  min-difference-detect-error
+  expressions-container
+  json-output
+*/
+
 const NUM_EXPRESSIONS = 10
 
 require("../src/jquery1.7.2.min.js")
