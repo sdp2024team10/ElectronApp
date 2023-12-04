@@ -1,0 +1,16 @@
+#options input[type="number"] {
+    width: 50px;
+}
+
+#variable-name {
+    width: 15px;
+}
+
+.mq-math-mode {
+    min-width: 300px;
+}
+
+.mq-math-mode * {
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    font-size: 2rem;
+}
