@@ -1,6 +1,6 @@
 /*
 requires HTML elements with the following IDs:
-  options
+  verif-parameters
     variable-name
     sample-start
     sample-end
@@ -8,7 +8,9 @@ requires HTML elements with the following IDs:
     sample-spacing
   min-difference-detect-error
   expressions-container
-  json-output
+  verif-parameters-json
+  run-verif-button
+  verif-output
 */
 
 const NUM_EXPRESSIONS = 10
@@ -18,7 +20,7 @@ require("../node_modules/mathquill/build/mathquill.js")
 
 var MQ = MathQuill.getInterface(2);
 var expressionFields = [];
-var options = {
+var verifParameters = {
     unknown_variables: [{
         name: '',
         sample_start: 0,
@@ -31,7 +33,7 @@ var options = {
 };
 
 function updateJSONOutput() {
-    document.getElementById('json-output').textContent = JSON.stringify(options, null, 2);
+    document.getElementById('verif-parameters-json').textContent = JSON.stringify(verifParameters, null, 2);
 }
 
 function addExpressionField() {
@@ -47,25 +49,25 @@ function addExpressionField() {
             edit: function () {
                 var latex = mathField.latex();
                 var index = expressionFields.indexOf(mathField);
-                options.expressions[index] = latex;
+                verifParameters.expressions[index] = latex;
                 updateJSONOutput();            }
         }
     });
 
     expressionFields.push(mathField);
-    options.expressions.push(''); // Initialize with empty string
+    verifParameters.expressions.push(''); // Initialize with empty string
     updateJSONOutput();
 }
 
 function updateOptions() {
-    options.unknown_variables[0] = {
+    verifParameters.unknown_variables[0] = {
         name: document.getElementById('variable-name').value,
         sample_start: parseFloat(document.getElementById('sample-start').value),
         sample_end: parseFloat(document.getElementById('sample-end').value),
         num_samples: parseInt(document.getElementById('num-samples').value, 10),
         sample_spacing: document.getElementById('sample-spacing').value
     };
-    options.min_difference_detect_error = parseFloat(document.getElementById('min-difference-detect-error').value);
+    verifParameters.min_difference_detect_error = parseFloat(document.getElementById('min-difference-detect-error').value);
     updateJSONOutput();
 }
 
@@ -90,6 +92,24 @@ function initializeTestExpressions() {
         expressionFields[i].latex(test_exprs[i])
     }
 }
+
+var ws = new WebSocket('ws://localhost:8080');
+var verifOutputElement = document.getElementById('verif-output');
+
+ws.onmessage = function(event) {
+    var message = JSON.parse(event.data);
+    console.log(message)
+    if (message.type === 'verif-output') {
+        verifOutputElement.textContent = message.data + '\n';
+    } else {
+        verifOutputElement.textContent = "ERROR"
+        console.log(`ERROR: unrecognized message of type \"${message.type}\"\n${message.data}`)
+    }
+};
+
+document.getElementById('run-verif-button').addEventListener('click', function() {
+    ws.send(JSON.stringify({ type: 'run-verif', data: verifParameters }));
+});
 
 function init() {
     for (var i = 0; i < NUM_EXPRESSIONS; i++) {
