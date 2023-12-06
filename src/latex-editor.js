@@ -63,7 +63,7 @@ function addExpressionField() {
     updateJSONOutput()
 }
 
-function updateOptions() {
+function updateParameters() {
     verifParameters.unknown_variables[0] = {
         name: document.getElementById('variable-name').value,
         sample_start: parseFloat(document.getElementById('sample-start').value),
@@ -75,8 +75,8 @@ function updateOptions() {
     updateJSONOutput()
 }
 
-document.querySelectorAll('#options input, #options select').forEach(input => {
-    input.addEventListener('change', updateOptions)
+document.querySelectorAll('#verif-parameters input, #verif-parameters select').forEach(input => {
+    input.addEventListener('change', updateParameters)
 })
 
 function initializeTestExpressions() {
@@ -120,6 +120,6 @@ function init() {
         addExpressionField()
     }
     initializeTestExpressions()
-    updateOptions()
+    updateParameters()
 }
 window.onload = init
