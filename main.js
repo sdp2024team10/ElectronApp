@@ -5,7 +5,12 @@ require('dotenv').config({ path: '.env-base' })
 if (DEBUG) { require('electron-reload')(__dirname) }
 const{  app, BrowserWindow } = require('electron')
 const WebSocket = require('ws')
+const fs = require('fs')
 const { exec } = require('child_process')
+const Ajv = require('ajv')
+
+const ajv = new Ajv()
+var validateVerifResults = null // defined by initJsonSchemaValidators()
 
 function createWindow () {
     const win = new BrowserWindow({
@@ -17,6 +22,11 @@ function createWindow () {
         }
     })
     win.loadFile('src/index.html')
+}
+
+function initJsonSchemaValidators(){
+    const verifResultsSchema = JSON.parse(fs.readFileSync("src/verif-results-schema.json"))
+    validateVerifResults = ajv.compile(verifResultsSchema)
 }
 
 function handleIncomingWebSockMessage(encodedMessage, ws){
@@ -31,8 +41,14 @@ function handleIncomingWebSockMessage(encodedMessage, ws){
         verifProcess.stdin.write(JSON.stringify(message.data))
         verifProcess.stdin.end()
         verifProcess.stdout.on('data', (data) => {
-            console.log(data)
-            ws.send(JSON.stringify({ "type": "verif-output", "data": data }))
+            console.log("verification stdout received:")
+            console.log(JSON.stringify(data))
+            if(validateVerifResults(JSON.parse(data))){
+                ws.send(JSON.stringify({ "type": "verif-output", "data": data }))
+            }else{
+                console.log("verification output does not comply to schema!")
+                ws.send(JSON.stringify({ "type": "verif-output", "data": "ERROR" }))
+            }
         })
         verifProcess.stderr.on('data', (data) => {
             console.log(data)
@@ -49,6 +65,7 @@ function handleIncomingWebSockMessage(encodedMessage, ws){
 }
 
 function main(){
+    initJsonSchemaValidators()
     const wss = new WebSocket.Server({ port: 8080 })
     wss.on('connection', function connection(ws) {
         ws.on('message', function incoming(message) {

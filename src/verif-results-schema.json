@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "all-equal": {
+      "type": "boolean"
+    },
+    "first-non-equal-indices": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "x-axis-array": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "y-axis-array1": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "y-axis-array2": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    }
+  },
+  "required": ["all-equal"],
+  "if": {
+    "properties": { "all-equal": { "const": false } }
+  },
+  "then": {
+    "required": ["first-non-equal-indices", "x-axis-array", "y-axis-array1", "y-axis-array2"]
+  }
+}
