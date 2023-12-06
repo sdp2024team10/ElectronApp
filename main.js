@@ -35,7 +35,7 @@ function handleIncomingWebSockMessage(encodedMessage, ws){
     const message = JSON.parse(encodedMessage)
     console.log(message)
     if (message.type === 'run-verif') {
-        ws.send(JSON.stringify({ "type": "verif-running", "data": "verification running..." }))
+        ws.send(JSON.stringify({ "type": "verif-status", "data": "verification running..." }))
         const verificationExePath = process.env.VERIFICATION_EXE_PATH
         console.log(`executing \"${verificationExePath}\" ...`)
         const verifProcess = exec(verificationExePath)
@@ -48,7 +48,7 @@ function handleIncomingWebSockMessage(encodedMessage, ws){
                 ws.send(JSON.stringify({ "type": "verif-output", "data": data }))
             }else{
                 console.log("verification output does not comply to schema!")
-                ws.send(JSON.stringify({ "type": "verif-output", "data": "ERROR" }))
+                ws.send(JSON.stringify({ "type": "verif-status", "data": "ERROR" }))
             }
         })
         verifProcess.stderr.on('data', (data) => {
@@ -56,7 +56,7 @@ function handleIncomingWebSockMessage(encodedMessage, ws){
         })
         verifProcess.on('close', (code) => {
             if (code != 0){ // return code 2 means expressions not equal
-                ws.send(JSON.stringify({ "type": "verif-output", "data": "ERROR" }))
+                ws.send(JSON.stringify({ "type": "verif-status", "data": "ERROR" }))
             }
             console.log(`verification process exited with code ${code}`)
         })

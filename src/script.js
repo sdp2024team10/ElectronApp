@@ -10,7 +10,7 @@ requires HTML elements with the following IDs:
   expressions-table (table)
   verif-parameters-json
   run-verif-button (button)
-  verif-output
+  verif-status
   chart (canvas)
 */
 
@@ -50,13 +50,7 @@ var chartData = {
         data: [],
     }]
 };
-var chartOptions = {
-    scales: {
-        y: {
-            beginAtZero: true
-        }
-    }
-};
+var chartOptions = {}
 
 function updateVerifParametersText() {
     document.getElementById('verif-parameters-json').textContent = JSON.stringify(verifParameters, null, 2)
@@ -141,24 +135,20 @@ function clearChart(){
     chart.update()
 }
 
+function updateStatusElement(x){
+    document.getElementById('verif-status').textContent = x.toString()
+}
+
 function displayVerifResults(results){
     if(results["all-equal"] == true){
-        console.log("all equal!")
+        updateStatusElement("all expressions are equal!")
         clearChart()
     }else{
-        console.log(`results.data: ${results.data}`)
-        results.data = JSON.parse(results.data) // I don't know why this is a string and not an object
-        console.log(`results.data: ${results.data}`)
-        // chart.data.labels =  [0, 1, 2, 3],
-        // chart.data.datasets[0].data = [1, 2, 3, 4],
-        // chart.data.datasets[1].data = [2, 3, 4, 5],
-        console.log(`results: ${JSON.stringify(results)}`)
-        console.log(`results.data: ${JSON.stringify(results.data)}`)
-        console.log(`x axis array: ${results.data["x-axis-array"]}`)
-        chart.data.labels = results["data"]["x-axis-array"]
-        chart.data.datasets[0].data = results["data"]["y-axis-array1"]
+        updateStatusElement("inequality found in expressions.")
+        chart.data.labels = results["x-axis-array"]
+        chart.data.datasets[0].data = results["y-axis-array1"]
         // chart.data.datasets[0].label = `expression ${results["first-inequal-indeces"][0]}`
-        chart.data.datasets[1].data = results["data"]["y-axis-array2"]
+        chart.data.datasets[1].data = results["y-axis-array2"]
         // chart.data.datasets[1].label = `expression ${results["first-inequal-indeces"][1]}`
         chart.update()
     }
@@ -166,22 +156,19 @@ function displayVerifResults(results){
 
 function main() {
     var ws = new WebSocket('ws://localhost:8080')
-    var verifOutputElement = document.getElementById('verif-output')
-    
     ws.onmessage = function(event) {
         var message = JSON.parse(event.data)
-        console.log(message)
-        if (message.type == 'verif-running') {
-            verifOutputElement.textContent = message.data + '\n'
+        console.log(JSON.stringify(message))
+        if (message.type == 'verif-status') {
+            updateStatusElement(message["data"])
         } else if (message.type === 'verif-output') {
-            verifOutputElement.textContent = message.data + '\n'
-            displayVerifResults(message)
+            var messageData = JSON.parse(message["data"]) // unclear why I need to parse twice
+            displayVerifResults(messageData) // this also does updateStatusElement()
         } else {
-            verifOutputElement.textContent = "ERROR"
-            console.log(`ERROR: unrecognized message of type \"${message.type}\"\n${message.data}`)
+            updateStatusElement("ERROR")
+            console.log(`ERROR: unrecognized message of type \"${message.type}\"`)
         }
     }
-    
     document.getElementById('run-verif-button').addEventListener('click', function() {
         ws.send(JSON.stringify({ type: 'run-verif', data: verifParameters }))
     })
