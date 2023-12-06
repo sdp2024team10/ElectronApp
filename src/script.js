@@ -8,7 +8,6 @@ requires HTML elements with the following IDs:
     sample-spacing
   min-difference-detect-error
   expressions-table (table)
-  verif-parameters-json
   run-verif-button (button)
   verif-status
   chart (canvas)
@@ -51,11 +50,6 @@ var chartData = {
     }]
 };
 var chartOptions = {}
-
-function updateVerifParametersText() {
-    document.getElementById('verif-parameters-json').textContent = JSON.stringify(verifParameters, null, 2)
-}
-
 function addExpressionField() {
 
     var expressionsTable = document.getElementById('expressions-table')
@@ -74,13 +68,12 @@ function addExpressionField() {
                 var latex = mathField.latex()
                 var index = expressionMathFields.indexOf(mathField)
                 verifParameters.expressions[index] = latex
-                updateVerifParametersText()            }
+            }
         }
     })
 
     expressionMathFields.push(mathField)
     verifParameters.expressions.push('')
-    updateVerifParametersText()
 }
 
 function updateParameters() {
@@ -92,7 +85,6 @@ function updateParameters() {
         sample_spacing: document.getElementById('sample-spacing').value
     }
     verifParameters.min_difference_detect_error = parseFloat(document.getElementById('min-difference-detect-error').value)
-    updateVerifParametersText()
 }
 
 document.querySelectorAll('#verif-parameters input, #verif-parameters select').forEach(input => {
