@@ -22,6 +22,7 @@ function createWindow () {
         }
     })
     win.loadFile('src/index.html')
+    // win.loadFile('src/chart-test.html')
 }
 
 function initJsonSchemaValidators(){
@@ -34,7 +35,7 @@ function handleIncomingWebSockMessage(encodedMessage, ws){
     const message = JSON.parse(encodedMessage)
     console.log(message)
     if (message.type === 'run-verif') {
-        ws.send(JSON.stringify({ "type": "verif-output", "data": "verification running..." }))
+        ws.send(JSON.stringify({ "type": "verif-running", "data": "verification running..." }))
         const verificationExePath = process.env.VERIFICATION_EXE_PATH
         console.log(`executing \"${verificationExePath}\" ...`)
         const verifProcess = exec(verificationExePath)
