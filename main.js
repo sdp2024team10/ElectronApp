@@ -17,7 +17,6 @@ function createWindow () {
         }
     })
     win.loadFile('src/index.html')
-    if (DEBUG) { win.webContents.openDevTools() }
 }
 
 function handleIncomingWebSockMessage(encodedMessage, ws){
