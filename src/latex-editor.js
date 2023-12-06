@@ -7,7 +7,7 @@ requires HTML elements with the following IDs:
     num-samples
     sample-spacing
   min-difference-detect-error
-  expressions-container
+  expressions-table
   verif-parameters-json
   run-verif-button
   verif-output
@@ -19,7 +19,7 @@ require("../src/jquery1.7.2.min.js")
 require("../node_modules/mathquill/build/mathquill.js")
 
 var MQ = MathQuill.getInterface(2)
-var expressionFields = []
+var expressionMathFields = []
 var verifParameters = {
     unknown_variables: [{
         name: '',
@@ -37,25 +37,29 @@ function updateJSONOutput() {
 }
 
 function addExpressionField() {
-    var container = document.createElement('div')
-    var expressionSpan = document.createElement('span')
 
-    container.appendChild(expressionSpan)
-    document.getElementById('expressions-container').appendChild(container)
+    var expressionsTable = document.getElementById('expressions-table')
+    var row = expressionsTable.insertRow()
+    var indexCell = row.insertCell()
+    var mathFieldCell = row.insertCell()
+    var mathFieldSpan = document.createElement('span')
 
-    var mathField = MQ.MathField(expressionSpan, {
+    indexCell.textContent = expressionMathFields.length
+    mathFieldCell.appendChild(mathFieldSpan)
+
+    var mathField = MQ.MathField(mathFieldSpan, {
         spaceBehavesLikeTab: true,
         handlers: {
             edit: function () {
                 var latex = mathField.latex()
-                var index = expressionFields.indexOf(mathField)
+                var index = expressionMathFields.indexOf(mathField)
                 verifParameters.expressions[index] = latex
                 updateJSONOutput()            }
         }
     })
 
-    expressionFields.push(mathField)
-    verifParameters.expressions.push('') // Initialize with empty string
+    expressionMathFields.push(mathField)
+    verifParameters.expressions.push('')
     updateJSONOutput()
 }
 
@@ -89,7 +93,7 @@ function initializeTestExpressions() {
         "x^2",
     ]
     for (var i = 0; i < NUM_EXPRESSIONS; i++) {
-        expressionFields[i].latex(test_exprs[i])
+        expressionMathFields[i].latex(test_exprs[i])
     }
 }
 
