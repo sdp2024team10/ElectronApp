@@ -1,4 +1,5 @@
 require('dotenv').config();
+require('dotenv').config({ path: '.env.base' });
 const{  app, BrowserWindow } = require('electron');
 
 require('electron-reload')(__dirname);
