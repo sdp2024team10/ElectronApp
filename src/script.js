@@ -167,8 +167,13 @@ function main() {
                 displayVerifResults(messageData) // this also does updateStatusElement()
                 break
             case "expressions":
-                var response = confirm("new expressions received. Overwrite previous expressions?")
-                if(response == true){
+                doOverwrite = false
+                if (verifParameters.expressions.every(str => str === "")){
+                    doOverwrite = true
+                } else{
+                    doOverwrite = confirm("new expressions received. Overwrite previous expressions?")
+                }
+                if(doOverwrite == true){
                     overwriteExpressions(message["data"])
                 }
                 break
