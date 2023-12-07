@@ -39,13 +39,15 @@ var chartData = {
         label: '',
         backgroundColor: 'rgba(255, 99, 132, 0.2)',
         borderColor: 'rgba(255, 99, 132, 1)',
-        borderWidth: 1,
+        borderWidth: 2,
+        pointRadius: 0, // no circle around points
         data: [],
     }, {
         label: '',
         backgroundColor: 'rgba(54, 162, 235, 0.2)',
         borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: 1,
+        borderWidth: 2,
+        pointRadius: 0, // no circle around points
         data: [],
     }]
 };
