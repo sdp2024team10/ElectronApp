@@ -22,7 +22,6 @@ function createWindow () {
         }
     })
     win.loadFile('src/index.html')
-    // win.loadFile('src/chart-test.html')
 }
 
 function initJsonSchemaValidators(){
@@ -71,7 +70,7 @@ function main(){
     wss.on('connection', function connection(ws) {
         ws.send(JSON.stringify({ "type": "expressions", "data": [
             "x^2",
-            "x^2",
+            "x^3",
             "x^2",
             "x^2",
             "x^2",

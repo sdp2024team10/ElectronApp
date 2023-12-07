@@ -41,17 +41,23 @@ var chartData = {
         borderColor: 'rgba(255, 99, 132, 1)',
         borderWidth: 2,
         pointRadius: 0, // no circle around points
-        data: [],
+        data: {},
     }, {
         label: '',
         backgroundColor: 'rgba(54, 162, 235, 0.2)',
         borderColor: 'rgba(54, 162, 235, 1)',
         borderWidth: 2,
         pointRadius: 0, // no circle around points
-        data: [],
+        data: {},
     }]
 };
-var chartOptions = {}
+var chartOptions = {
+    scales: {
+        x: {
+            type: "linear" // I think the default value might be graphing 10^x rather than x
+        }
+    }
+}
 function addExpressionField() {
 
     var expressionsTable = document.getElementById('expressions-table')
@@ -131,14 +137,20 @@ function displayVerifResults(results){
         clearChart()
     }else{
         updateStatusElement("inequality found in expressions.")
-        chart.data.labels = results["x-axis-array"]
-        chart.data.datasets[0].data = results["y-axis-array1"]
-        chart.data.datasets[0].label = `expression ${results["first-non-equal-indexes"][0]}`
-        chart.data.datasets[1].data = results["y-axis-array2"]
-        chart.data.datasets[1].label = `expression ${results["first-non-equal-indexes"][1]}`
+        chart.data.datasets[0].data = convertToChartData(results["x-axis-array"], results["y-axis-array1"])
+        chart.data.datasets[0].label = `expression #${results["first-non-equal-indexes"][0]}`
+        chart.data.datasets[1].data = convertToChartData(results["x-axis-array"], results["y-axis-array2"])
+        chart.data.datasets[1].label = `expression #${results["first-non-equal-indexes"][1]}`
         chart.update()
     }
 }
+
+function convertToChartData(xArray, yArray) {
+    return xArray.map((x, index) => {
+        return { x: x, y: yArray[index] };
+    });
+}
+
 
 function main() {
     var ws = new WebSocket('ws://localhost:8080')
