@@ -5,7 +5,7 @@
     "all-equal": {
       "type": "boolean"
     },
-    "first-non-equal-indices": {
+    "first-non-equal-indexes": {
       "type": "array",
       "items": {
         "type": "integer"
@@ -37,6 +37,6 @@
     "properties": { "all-equal": { "const": false } }
   },
   "then": {
-    "required": ["first-non-equal-indices", "x-axis-array", "y-axis-array1", "y-axis-array2"]
+    "required": ["first-non-equal-indexes", "x-axis-array", "y-axis-array1", "y-axis-array2"]
   }
 }

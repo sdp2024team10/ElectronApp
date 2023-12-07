@@ -113,9 +113,9 @@ function initChart(){
 function clearChart(){
     chart.data.labels = []
     chart.data.datasets[0].data = []
-    // chart.data.datasets[0].label = ""
+    chart.data.datasets[0].label = ""
     chart.data.datasets[1].data = []
-    // chart.data.datasets[1].label = ""
+    chart.data.datasets[1].label = ""
     chart.update()
 }
 
@@ -131,9 +131,9 @@ function displayVerifResults(results){
         updateStatusElement("inequality found in expressions.")
         chart.data.labels = results["x-axis-array"]
         chart.data.datasets[0].data = results["y-axis-array1"]
-        // chart.data.datasets[0].label = `expression ${results["first-inequal-indeces"][0]}`
+        chart.data.datasets[0].label = `expression ${results["first-non-equal-indexes"][0]}`
         chart.data.datasets[1].data = results["y-axis-array2"]
-        // chart.data.datasets[1].label = `expression ${results["first-inequal-indeces"][1]}`
+        chart.data.datasets[1].label = `expression ${results["first-non-equal-indexes"][1]}`
         chart.update()
     }
 }
