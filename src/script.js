@@ -136,11 +136,12 @@ function displayVerifResults(results){
         updateStatusElement("all expressions are equal!")
         clearChart()
     }else{
-        updateStatusElement("inequality found in expressions.")
+        let [beforeIndex, afterIndex] = results["first-non-equal-indexes"]
+        updateStatusElement(`expression #${afterIndex} is different from expression #${beforeIndex}`)
         chart.data.datasets[0].data = convertToChartData(results["x-axis-array"], results["y-axis-array1"])
-        chart.data.datasets[0].label = `expression #${results["first-non-equal-indexes"][0]}`
+        chart.data.datasets[0].label = `expression #${beforeIndex}`
         chart.data.datasets[1].data = convertToChartData(results["x-axis-array"], results["y-axis-array2"])
-        chart.data.datasets[1].label = `expression #${results["first-non-equal-indexes"][1]}`
+        chart.data.datasets[1].label = `expression #${afterIndex}`
         chart.update()
     }
 }
