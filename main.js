@@ -69,6 +69,18 @@ function main(){
     initJsonSchemaValidators()
     const wss = new WebSocket.Server({ port: 8080 })
     wss.on('connection', function connection(ws) {
+        ws.send(JSON.stringify({ "type": "expressions", "data": [
+            "x^2",
+            "x^2",
+            "x^2",
+            "x^2",
+            "x^2",
+            "x^2",
+            "x^2",
+            "x^2",
+            "x^2",
+            "x^2",
+        ]}))
         ws.on('message', function incoming(message) {
             handleIncomingWebSockMessage(message, ws)
         })

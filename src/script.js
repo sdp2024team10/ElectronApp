@@ -91,22 +91,14 @@ document.querySelectorAll('#verif-parameters input, #verif-parameters select').f
     input.addEventListener('change', updateParameters)
 })
 
-function initTestExpressions() {
-    const test_exprs = [
-        "x^2",
-        "x^2",
-        "x^2",
-        "x^2",
-        "x^2",
-        "x^2",
-        "x^2",
-        "x^2",
-        "x^2",
-        "x^2",
-    ]
-    for (var i = 0; i < NUM_EXPRESSIONS; i++) {
-        expressionMathFields[i].latex(test_exprs[i])
+function overwriteExpressions(newExpressions){
+    if(expressionMathFields.length != newExpressions.length){
+        console.log(`ERROR: cannot overwrite a ${expressionMathFields.length} element list with a ${newExpressions.length} element list!`)
+        return
     }
+    for (var i = 0; i < expressionMathFields.length; i++) {
+        expressionMathFields[i].latex(newExpressions[i])
+    }    
 }
 
 function initChart(){
@@ -151,14 +143,23 @@ function main() {
     ws.onmessage = function(event) {
         var message = JSON.parse(event.data)
         console.log(JSON.stringify(message))
-        if (message.type == 'verif-status') {
-            updateStatusElement(message["data"])
-        } else if (message.type === 'verif-output') {
-            var messageData = JSON.parse(message["data"]) // unclear why I need to parse twice
-            displayVerifResults(messageData) // this also does updateStatusElement()
-        } else {
-            updateStatusElement("ERROR")
-            console.log(`ERROR: unrecognized message of type \"${message.type}\"`)
+        switch (message.type){
+            case "verif-status":
+                updateStatusElement(message["data"])
+                break
+            case "verif-output":
+                var messageData = JSON.parse(message["data"]) // unclear why I need to parse twice
+                displayVerifResults(messageData) // this also does updateStatusElement()
+                break
+            case "expressions":
+                var response = confirm("new expressions received. Overwrite previous expressions?")
+                if(response == true){
+                    overwriteExpressions(message["data"])
+                }
+                break
+            default:
+                updateStatusElement("ERROR")
+                console.log(`ERROR: unrecognized message of type \"${message.type}\"`)
         }
     }
     document.getElementById('run-verif-button').addEventListener('click', function() {
@@ -167,7 +168,6 @@ function main() {
     for (var i = 0; i < NUM_EXPRESSIONS; i++) {
         addExpressionField()
     }
-    initTestExpressions()
     initChart()
     updateParameters()
 }
