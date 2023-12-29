@@ -12,45 +12,6 @@ from verif_json_schema import input_schema
 results = {}
 
 _input = json.load(sys.stdin)
-# _input = {
-#     "unknown_variables": [
-#         {
-#             "name": "x",
-#             "sample_start": 0,
-#             "sample_end": 10,
-#             "num_samples": 40000,
-#             "sample_spacing": "linear",
-#         },
-#     ],
-#     "min_difference_detect_error": 0.1,
-#     "expressions": [
-#         "x^2",
-#         "x*x",
-#         "x^3",
-#     ],
-# }
-# _input = {
-#     "unknown_variables":[{
-#         "name":"x",
-#         "sample_start":0,
-#         "sample_end":10,
-#         "num_samples":10,
-#         "sample_spacing":"linear"
-#     }],
-#     "min_difference_detect_error":0.1,
-#     "expressions": [
-#         "x^2", # 0
-#         "x^3", # 1
-#         "x^2", # 2
-#         "x^2", # 3
-#         "x^2", # 4
-#         "", # 5
-#         "x^2", # 6
-#         "x^2", # 7
-#         "x^2", # 8
-#         "x^2", # 9
-#     ]
-# }
 
 jsonschema.validate(instance=_input, schema=input_schema)
 

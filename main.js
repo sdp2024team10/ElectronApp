@@ -1,5 +1,5 @@
 const DEBUG = true
-
+//const path = require('path');
 require('dotenv').config()
 require('dotenv').config({ path: '.env-base' })
 if (DEBUG) { require('electron-reload')(__dirname) }
@@ -35,6 +35,7 @@ function handleIncomingWebSockMessage(encodedMessage, ws){
     console.log(message)
     if (message.type === 'run-verif') {
         ws.send(JSON.stringify({ "type": "verif-status", "data": "verification running..." }))
+        //const verificationExePath = path.join(__dirname, 'dist/verif');
         const verificationExePath = process.env.VERIFICATION_EXE_PATH
         console.log(`executing \"${verificationExePath}\" ...`)
         const verifProcess = exec(verificationExePath)

@@ -19,6 +19,33 @@ require("../src/jquery1.7.2.min.js")
 require("../node_modules/mathquill/build/mathquill.js")
 const Chart = require('chart.js/auto');
 
+const axios = require('axios');
+
+window.getMathExplanation = async function(problemDescription) {
+    try {
+        const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+            model: "gpt-3.5-turbo",
+            messages: [
+                {"role": "user", "content": problemDescription}
+            ]
+        }, {
+            headers: {
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        // Extracting the content from the response
+        const explanation = response.data.choices[0].message.content;
+
+        // Update the DOM with the explanation
+        document.getElementById('math-explanation').innerText = explanation;
+    } catch (error) {
+        console.error("Error getting explanation:", error);
+        document.getElementById('math-explanation').innerText = "Error getting explanation.";
+    }
+};
+
 var MQ = MathQuill.getInterface(2)
 var expressionMathFields = []
 var verifParameters = {
@@ -152,6 +179,18 @@ function convertToChartData(xArray, yArray) {
     });
 }
 
+function renderLatex(latexString, elementId) {
+    try {
+        const latexElement = document.createElement('span');  // Create a new span for the LaTeX
+        latexElement.innerHTML = katex.renderToString(latexString, {
+            throwOnError: false
+        });
+
+        document.getElementById(elementId).appendChild(latexElement); // Append the span to the element
+    } catch (error) {
+        console.error("Error rendering LaTeX:", error);
+    }
+}
 
 function main() {
     var ws = new WebSocket('ws://localhost:8080')
@@ -190,6 +229,9 @@ function main() {
     }
     initChart()
     updateParameters()
+    
+    const problem = "You are an assistant in our algebraic debugger. You need to output a response explaining why the step from x(x + 5) to x = 2 or x^3 + 5x is incorrect";
+    getMathExplanation(problem);
 }
 
 window.onload = main
