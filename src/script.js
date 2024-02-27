@@ -224,6 +224,9 @@ function main() {
     document.getElementById('run-verif-button').addEventListener('click', function() {
         ws.send(JSON.stringify({ type: 'run-verif', data: verifParameters }))
     })
+    document.getElementById('run-pred-button').addEventListener('click', function() {
+        ws.send(JSON.stringify({ type: 'run-prediction' }));
+    })
     for (var i = 0; i < NUM_EXPRESSIONS; i++) {
         addExpressionField()
     }

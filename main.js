@@ -30,10 +30,45 @@ function initJsonSchemaValidators(){
 }
 
 function handleIncomingWebSockMessage(encodedMessage, ws){
-    // TODO juggle electron websocket and machine learning websocket
     const message = JSON.parse(encodedMessage)
     console.log(message)
-    if (message.type === 'run-verif') {
+
+    if (message.type === 'run-prediction') { // if run predicition button is clicked
+        const pythonExecutablePath = '/Users/jordanandrade/opt/anaconda3/envs/bttr/bin/python'
+        const scriptPath = '/Users/jordanandrade/electronapp/BTTR/example/prediction.py'
+        const ckptPath = '/Users/jordanandrade/Desktop/BTTR/lightning_logs/version_13270759/checkpoints/epoch=245-step=92495-val_ExpRate=0.5536.ckpt';
+        const imgPath = '/Users/jordanandrade/electronapp/BTTR/example/18_em_1.bmp';
+        const command = `${pythonExecutablePath} ${scriptPath} --ckpt "${ckptPath}" --img "${imgPath}"`;
+
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Prediction script error: ${error}`);
+                ws.send(JSON.stringify({ "type": "prediction-status", "data": "ERROR" }))
+                return;
+            }
+            if (stderr) {
+                console.error(`Prediction script stderr: ${stderr}`)
+            }
+
+            const lines = stdout.trim().split('\n');
+            const predictionOutput = lines[lines.length - 1].trim(); // takes the last line of prediction output
+            console.log(`Prediction script output: ${predictionOutput}`)
+
+            ws.send(JSON.stringify({ "type": "expressions", "data": [ //TODO figure out why ten expression must be sent
+                predictionOutput,
+                "x^3",
+                "x^2",
+                "x^2",
+                "x^2",
+                "x^2",
+                "x^2",
+                "x^2",
+                "x^2",
+                "x^2",
+            ]}))
+        })
+
+    } else if (message.type === 'run-verif') {
         ws.send(JSON.stringify({ "type": "verif-status", "data": "verification running..." }))
         //const verificationExePath = path.join(__dirname, 'dist/verif');
         const verificationExePath = process.env.VERIFICATION_EXE_PATH
@@ -69,18 +104,6 @@ function main(){
     initJsonSchemaValidators()
     const wss = new WebSocket.Server({ port: 8080 })
     wss.on('connection', function connection(ws) {
-        ws.send(JSON.stringify({ "type": "expressions", "data": [
-            "x^2",
-            "x^3",
-            "x^2",
-            "x^2",
-            "x^2",
-            "x^2",
-            "x^2",
-            "x^2",
-            "x^2",
-            "x^2",
-        ]}))
         ws.on('message', function incoming(message) {
             handleIncomingWebSockMessage(message, ws)
         })
