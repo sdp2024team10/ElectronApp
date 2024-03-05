@@ -204,6 +204,10 @@ function main() {
             case "verif-output":
                 var messageData = JSON.parse(message["data"]) // unclear why I need to parse twice
                 displayVerifResults(messageData) // this also does updateStatusElement()
+                const equation1 = messageData["equation1"];
+                const equation2 = messageData["equation2"];
+                const problem = `You are an assistant in our algebraic debugger. You need to output a response explaining why the step from ${equation1} to ${equation2} is incorrect`;
+                getMathExplanation(problem);
                 break
             case "expressions":
                 doOverwrite = false
@@ -233,8 +237,8 @@ function main() {
     initChart()
     updateParameters()
     
-    const problem = "You are an assistant in our algebraic debugger. You need to output a response explaining why the step from x(x + 5) to x = 2 or x^3 + 5x is incorrect";
-    getMathExplanation(problem);
+    // const problem = "You are an assistant in our algebraic debugger. You need to output a response explaining why the step from x(x + 5) to x = 2 or x^3 + 5x is incorrect";
+    // getMathExplanation(problem);
 }
 
 window.onload = main

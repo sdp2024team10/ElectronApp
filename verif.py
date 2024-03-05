@@ -43,8 +43,12 @@ for latex_expr in latex_expressions_not_blank:
 for i in range(1,len(graphs)):
     prev_graph_diff = sum(abs(graphs[i]-graphs[i-1]))
     if prev_graph_diff > _input["min_difference_detect_error"]:
+        equation1 = latex_expressions_not_blank[i - 1]
+        equation2 = latex_expressions_not_blank[i]
         results = {
             "all-equal": False,
+            "equation1": equation1,
+            "equation2": equation2,
             "first-non-equal-indexes": [not_blank_index_2_original_index[i-1], not_blank_index_2_original_index[i]],
             "x-axis-array": samples.tolist(),
             "y-axis-array1": graphs[i-1].tolist(),
