@@ -126,16 +126,6 @@ document.querySelectorAll('#verif-parameters input, #verif-parameters select').f
     input.addEventListener('change', updateParameters)
 })
 
-function overwriteExpressions(newExpressions) {
-    if (expressionMathFields.length != newExpressions.length) {
-        console.log(`ERROR: cannot overwrite a ${expressionMathFields.length} element list with a ${newExpressions.length} element list!`)
-        return
-    }
-    for (var i = 0; i < expressionMathFields.length; i++) {
-        expressionMathFields[i].latex(newExpressions[i])
-    }
-}
-
 function initChart() {
     var chartElementContext = document.getElementById("chart").getContext("2d")
     chart = new Chart(chartElementContext, {
@@ -194,9 +184,10 @@ function renderLatex(latexString, elementId) {
 
 function main() {
     var ws = new WebSocket('ws://localhost:8080')
+    console.log("hello, world!")
     ws.onmessage = function (event) {
+        console.log(event.data)
         var message = JSON.parse(event.data)
-        console.log(JSON.stringify(message))
         switch (message.type) {
             case "verif-status":
                 updateStatusElement(message["data"])
@@ -209,16 +200,12 @@ function main() {
                 const problem = `You are an assistant in our algebraic debugger. You need to output a response explaining why the step from ${equation1} to ${equation2} is incorrect`;
                 getMathExplanation(problem);
                 break
-            case "expressions":
-                doOverwrite = false
-                if (verifParameters.expressions.every(str => str === "")) {
-                    doOverwrite = true
-                } else {
-                    doOverwrite = confirm("new expressions received. Overwrite previous expressions?")
-                }
-                if (doOverwrite == true) {
-                    overwriteExpressions(message["data"])
-                }
+            case "prediction-result":
+                console.log("prediction result received!")
+                console.log(message["data"])
+                index = message["data"].index
+                newExpression = message["data"].latex
+                expressionMathFields[index].latex(newExpression)
                 break
             default:
                 updateStatusElement("ERROR")

@@ -4,13 +4,18 @@ import json
 import serial
 import base64
 import tempfile
-from websockets.sync.client import connect
 
-PREFIX = os.getenv("TMP", "/tmp")
+# required for nodejs to parse in real time
+sys.stdout.reconfigure(line_buffering=True, write_through=True)
+
+print(json.dumps({"image_path": "../hand-math.jpeg"}))
+quit()
+
+
+PREFIX = os.getenv("TMP", "/tmp/")
 
 port = sys.argv[1]  # "/dev/ttyS3"
 baud_rate = int(sys.argv[2])  # 115200
-websocket_port_num = int(sys.argv[3])
 
 print(f"connecting to port {port} with baud rate {baud_rate}")
 serial_conn = serial.Serial(port, baud_rate)
@@ -31,13 +36,7 @@ while serial_conn.is_open:
             )
             my_tempfile.write(base64.b64decode(image_jpeg_base64))
             my_tempfile.close()
-            print(f"image written to {my_tempfile.name}")
-            with connect(f"ws://localhost:{websocket_port_num}") as websocket:
-                websocket.send(
-                    json.dumps(
-                        {"type": "new-camera-jpeg-path", "data": my_tempfile.name}
-                    )
-                )
+            print(json.dumps({"image_path": my_tempfile.name}))
     except UnicodeDecodeError:
         print(line)
 

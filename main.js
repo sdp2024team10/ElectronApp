@@ -6,14 +6,18 @@ if (DEBUG) { require('electron-reload')(__dirname) }
 const { app, BrowserWindow } = require('electron')
 const WebSocket = require('ws')
 const fs = require('fs')
+const readline = require('readline');
 const { exec } = require('child_process')
 const { spawn } = require('child_process')
 const Ajv = require('ajv')
 
-const WEBSOCK_PORT=8080
+const WEBSOCK_PORT = 8080
 
 const ajv = new Ajv()
 var validateVerifResults = null // defined by initJsonSchemaValidators()
+
+const wss = new WebSocket.Server({ port: WEBSOCK_PORT })
+console.log('WebSocket server started on ws://localhost:8080')
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -35,50 +39,7 @@ function initJsonSchemaValidators() {
 function handleIncomingWebSockMessage(encodedMessage, ws) {
     const message = JSON.parse(encodedMessage)
     console.log(message)
-
-    if (message.type == "new-camera-jpeg-path") {
-        console.log("image path received!")
-        console.log(message.data)
-    }
-    else if (message.type === 'run-prediction') { // if run predicition button is clicked
-        const pythonExecutablePath = '/Users/jordanandrade/opt/anaconda3/envs/bttr/bin/python'
-        const scriptPath = '/Users/jordanandrade/electronapp/BTTR/example/prediction.py'
-        const ckptPath = '/Users/jordanandrade/Desktop/BTTR/lightning_logs/version_13270759/checkpoints/epoch=245-step=92495-val_ExpRate=0.5536.ckpt';
-        const imgPath = '/Users/jordanandrade/electronapp/BTTR/example/18_em_1.bmp';
-        const command = `${pythonExecutablePath} ${scriptPath} --ckpt "${ckptPath}" --img "${imgPath}"`;
-
-        exec(command, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`Prediction script error: ${error}`);
-                ws.send(JSON.stringify({ "type": "prediction-status", "data": "ERROR" }))
-                return;
-            }
-            if (stderr) {
-                console.error(`Prediction script stderr: ${stderr}`)
-            }
-
-            const lines = stdout.trim().split('\n');
-            const predictionOutput = lines[lines.length - 1].trim(); // takes the last line of prediction output
-            console.log(`Prediction script output: ${predictionOutput}`)
-
-            ws.send(JSON.stringify({
-                "type": "expressions", "data": [ //TODO figure out why ten expression must be sent
-                    predictionOutput,
-                    "x^3",
-                    "x^2",
-                    "x^2",
-                    "x^2",
-                    "x^2",
-                    "x^2",
-                    "x^2",
-                    "x^2",
-                    "x^2",
-                ]
-            }))
-        })
-
-    }
-    else if (message.type === 'run-verif') {
+    if (message.type === 'run-verif') {
         ws.send(JSON.stringify({ "type": "verif-status", "data": "verification running..." }))
         const verif_cmd = `${process.env.VERIF_PYTHON_PATH} ${process.env.VERIF_PATH}`
         console.log(`executing \"${verif_cmd}\" ...`)
@@ -109,34 +70,83 @@ function handleIncomingWebSockMessage(encodedMessage, ws) {
     }
 }
 
+function broadcast(message) {
+    wss.clients.forEach(function each(client) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    });
+  }
+
+function spawnAndHandleLines(binary, args, options, stdout_handler, stderr_handler, exit_handler) {
+    console.log(`starting binary ${binary} with args ${JSON.stringify(args)} and options ${JSON.stringify(options)}`)
+    const thisProcess = spawn(binary, args, options);
+    const rlStdout = readline.createInterface({
+        input: thisProcess.stdout,
+        crlfDelay: Infinity
+    });
+    rlStdout.on('line', (line) => {
+        stdout_handler(line)
+    });
+    const rlStderr = readline.createInterface({
+        input: thisProcess.stderr,
+        crlfDelay: Infinity
+    });
+    rlStderr.on('line', (line) => {
+        stderr_handler(line)
+    });
+    thisProcess.on('close', (code) => {
+        exit_handler(code)
+    });
+}
+
+function handlePredictionStdoutLine(predictionStdoutLine) {
+    // TODO validate schema
+    console.log(`predict.py stdout: ${predictionStdoutLine}`)
+    broadcast(predictionStdoutLine) // send to frontend
+}
+
+function runPrediction(image_path) {
+    spawnAndHandleLines(
+        process.env.PREDICT_PYTHON_PATH,
+        [process.env.PREDICT_PATH, image_path],
+        { cwd: process.env.PREDICT_CWD },
+        line => handlePredictionStdoutLine(line),
+        line => console.log(`predict.py stderr : ${line}`),
+        (code) => console.log(`predict.py exited with code ${code}`)
+    );
+}
+
+function handleImagesFromSerialStdoutLine(imagesFromSerialStdoutLine) {
+    // if the line is an image path, then run a prediction
+    var image_path = null
+    try {
+        image_path = JSON.parse(imagesFromSerialStdoutLine)["image_path"]
+    } catch (error) {
+        console.log(`images-from-serial.py stdout: ${imagesFromSerialStdoutLine}`)
+        return
+    }
+    runPrediction(image_path)
+}
+
+
 function main() {
     initJsonSchemaValidators()
-    const wss = new WebSocket.Server({ port: WEBSOCK_PORT })
     wss.on('connection', function connection(ws) {
         ws.on('message', function incoming(message) {
             handleIncomingWebSockMessage(message, ws)
         })
     })
-    console.log('WebSocket server started on ws://localhost:8080')
-
-    const image_from_serial_process = spawn(
-        process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
-        [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE, WEBSOCK_PORT]
-    );
-
-    image_from_serial_process.stdout.on('data', (data) => {
-        console.log(`images-from-serial.py stdout: ${data}`);
-    });
-
-    image_from_serial_process.stderr.on('data', (data) => {
-        console.error(`images-from-serial.py stderr: ${data}`);
-    });
-
-    image_from_serial_process.on('close', (code) => {
-        console.log(`images-from-serial.py exited with code ${code}. quitting...`);
-        if (process.platform !== 'darwin') app.quit()
-    });
+    console.log("websocket message handlers initialized")
     createWindow()
+    spawnAndHandleLines(
+        process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
+        [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE],
+        {}, // Options
+        line => handleImagesFromSerialStdoutLine(line),
+        line => console.log(`images-from-serial.py stderr : ${line}`),
+        (code) => console.log(`images-from-serial.py exited with code ${code}`)
+    );
 }
 
 app.whenReady().then(main)
