@@ -9,7 +9,8 @@ import tempfile
 sys.stdout.reconfigure(line_buffering=True, write_through=True)
 
 print(json.dumps({"image_path": "../hand-math.jpeg"}))
-quit()
+while True:
+    pass
 
 
 PREFIX = os.getenv("TMP", "/tmp/")
