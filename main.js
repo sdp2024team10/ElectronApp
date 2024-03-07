@@ -131,7 +131,8 @@ function main() {
     });
 
     image_from_serial_process.on('close', (code) => {
-        console.log(`child process exited with code ${code}`);
+        console.log(`images-from-serial.py exited with code ${code}. quitting...`);
+        if (process.platform !== 'darwin') app.quit()
     });
     createWindow()
 }
