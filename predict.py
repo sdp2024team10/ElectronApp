@@ -76,7 +76,7 @@ image = Image.open(image_path)
 image = convert_black_white(image)
 for i, segment in enumerate(split_rows(image, 11)):
     segment = strip_black_edges(segment)
-    segment.save(f"{i}.bmp")
+    # segment.save(f"{i}.bmp")
     if i == 0:
         continue
     before = datetime.datetime.now()
