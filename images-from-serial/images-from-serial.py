@@ -40,3 +40,5 @@ while serial_conn.is_open:
                 )
     except UnicodeDecodeError:
         print(line)
+
+print("serial connection closed!")
