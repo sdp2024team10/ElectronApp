@@ -143,7 +143,10 @@ function main() {
         {}, // Options
         line => handleImagesFromSerialStdoutLine(line),
         line => console.log(`images-from-serial.py stderr : ${line}`),
-        (code) => console.log(`images-from-serial.py exited with code ${code}`)
+        (code) => {
+            console.log(`images-from-serial.py exited with code ${code}`)
+            if (process.platform !== 'darwin') app.quit()
+        }
     );
 }
 
