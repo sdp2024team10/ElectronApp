@@ -1,8 +1,6 @@
-const DEBUG = true
 //const path = require('path');
 require('dotenv').config()
 require('dotenv').config({ path: '.env-base' })
-if (DEBUG) { require('electron-reload')(__dirname) }
 const { app, BrowserWindow } = require('electron')
 const WebSocket = require('ws')
 const fs = require('fs')
