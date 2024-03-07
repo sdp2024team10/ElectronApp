@@ -1,5 +1,5 @@
 node_modules/
-.DS_Store  # if you're on macOS
+.DS_Store # if you're on macOS
 dist/
 *.log
 .env
