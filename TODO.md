@@ -23,3 +23,4 @@ predict.py stdout: {"type": "prediction-result", "data": {"index": 5, "latex": "
 ```
 "{\"all-equal\": false, \"equation1\": \"x^2\", \"equation2\": \"i\\\\pi i\\\\pi2+2=4\", \"first-non-equal-indexes\": [0, 1], \"x-axis-array\": [0.0, 1.1111111111111112, 2.2222222222222223, 3.3333333333333335, 4.444444444444445, 5.555555555555555, 6.666666666666667, 7.777777777777779, 8.88888888888889, 10.0], \"y-axis-array1\": [0.0, 1.234567901234568, 4.938271604938272, 11.111111111111112, 19.75308641975309, 30.864197530864196, 44.44444444444445, 60.49382716049384, 79.01234567901236, 100.0], \"y-axis-array2\": false}\n"
 ```
+* move `./images-from-serial/images-from-serial.py` to `./images-from-serial.py`
