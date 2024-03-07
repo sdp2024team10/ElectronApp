@@ -7,6 +7,7 @@ const { app, BrowserWindow } = require('electron')
 const WebSocket = require('ws')
 const fs = require('fs')
 const { exec } = require('child_process')
+const { spawn } = require('child_process')
 const Ajv = require('ajv')
 
 const ajv = new Ajv()
@@ -33,7 +34,11 @@ function handleIncomingWebSockMessage(encodedMessage, ws) {
     const message = JSON.parse(encodedMessage)
     console.log(message)
 
-    if (message.type === 'run-prediction') { // if run predicition button is clicked
+    if (message.type == "new-camera-jpeg-path") {
+        console.log("image path received!")
+        console.log(message.data)
+    }
+    else if (message.type === 'run-prediction') { // if run predicition button is clicked
         const pythonExecutablePath = '/Users/jordanandrade/opt/anaconda3/envs/bttr/bin/python'
         const scriptPath = '/Users/jordanandrade/electronapp/BTTR/example/prediction.py'
         const ckptPath = '/Users/jordanandrade/Desktop/BTTR/lightning_logs/version_13270759/checkpoints/epoch=245-step=92495-val_ExpRate=0.5536.ckpt';
@@ -70,11 +75,12 @@ function handleIncomingWebSockMessage(encodedMessage, ws) {
             }))
         })
 
-    } else if (message.type === 'run-verif') {
+    }
+    else if (message.type === 'run-verif') {
         ws.send(JSON.stringify({ "type": "verif-status", "data": "verification running..." }))
         const verif_cmd = `${process.env.VERIF_PYTHON_PATH} ${process.env.VERIF_PATH}`
         console.log(`executing \"${verif_cmd}\" ...`)
-        const verifProcess = exec(verif_cmd, {cwd: process.env.VERIF_CWD})
+        const verifProcess = exec(verif_cmd, { cwd: process.env.VERIF_CWD })
         verifProcess.stdin.write(JSON.stringify(message.data))
         verifProcess.stdin.end()
         verifProcess.stdout.on('data', (data) => {
@@ -110,6 +116,23 @@ function main() {
         })
     })
     console.log('WebSocket server started on ws://localhost:8080')
+
+    const image_from_serial_process = spawn(
+        process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
+        [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE]
+    );
+
+    image_from_serial_process.stdout.on('data', (data) => {
+        console.log(`stdout: ${data}`);
+    });
+
+    image_from_serial_process.stderr.on('data', (data) => {
+        console.error(`stderr: ${data}`);
+    });
+
+    image_from_serial_process.on('close', (code) => {
+        console.log(`child process exited with code ${code}`);
+    });
     createWindow()
 }
 
