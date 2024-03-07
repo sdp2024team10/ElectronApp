@@ -20,11 +20,15 @@ assert len(_input["unknown_variables"]) == 1, "exactly 1 unknown variable"
 unknown_var = _input["unknown_variables"][0]
 if unknown_var["sample_spacing"] == "linear":
     samples = np.linspace(
-        unknown_var["sample_start"], unknown_var["sample_end"], unknown_var["num_samples"]
+        unknown_var["sample_start"],
+        unknown_var["sample_end"],
+        unknown_var["num_samples"],
     )
 else:
     samples = np.geomspace(
-        unknown_var["sample_start"], unknown_var["sample_end"], unknown_var["num_samples"]
+        unknown_var["sample_start"],
+        unknown_var["sample_end"],
+        unknown_var["num_samples"],
     )
 
 # remove blank expressions from list
