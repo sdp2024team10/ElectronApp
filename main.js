@@ -72,10 +72,9 @@ function handleIncomingWebSockMessage(encodedMessage, ws) {
 
     } else if (message.type === 'run-verif') {
         ws.send(JSON.stringify({ "type": "verif-status", "data": "verification running..." }))
-        //const verificationExePath = path.join(__dirname, 'dist/verif');
-        const verificationExePath = process.env.VERIFICATION_EXE_PATH
-        console.log(`executing \"${verificationExePath}\" ...`)
-        const verifProcess = exec(verificationExePath)
+        const verif_cmd = `${process.env.VERIF_PYTHON_PATH} ${process.env.VERIF_PATH}`
+        console.log(`executing \"${verif_cmd}\" ...`)
+        const verifProcess = exec(verif_cmd, {cwd: process.env.VERIF_CWD})
         verifProcess.stdin.write(JSON.stringify(message.data))
         verifProcess.stdin.end()
         verifProcess.stdout.on('data', (data) => {
