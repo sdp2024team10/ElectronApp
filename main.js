@@ -3,7 +3,7 @@ const DEBUG = true
 require('dotenv').config()
 require('dotenv').config({ path: '.env-base' })
 if (DEBUG) { require('electron-reload')(__dirname) }
-const{  app, BrowserWindow } = require('electron')
+const { app, BrowserWindow } = require('electron')
 const WebSocket = require('ws')
 const fs = require('fs')
 const { exec } = require('child_process')
@@ -12,9 +12,9 @@ const Ajv = require('ajv')
 const ajv = new Ajv()
 var validateVerifResults = null // defined by initJsonSchemaValidators()
 
-function createWindow () {
+function createWindow() {
     const win = new BrowserWindow({
-        width: 768, 
+        width: 768,
         height: 560,
         webPreferences: {
             nodeIntegration: true,
@@ -24,12 +24,12 @@ function createWindow () {
     win.loadFile('src/index.html')
 }
 
-function initJsonSchemaValidators(){
+function initJsonSchemaValidators() {
     const verifResultsSchema = JSON.parse(fs.readFileSync("src/verif-results-schema.json"))
     validateVerifResults = ajv.compile(verifResultsSchema)
 }
 
-function handleIncomingWebSockMessage(encodedMessage, ws){
+function handleIncomingWebSockMessage(encodedMessage, ws) {
     const message = JSON.parse(encodedMessage)
     console.log(message)
 
@@ -54,18 +54,20 @@ function handleIncomingWebSockMessage(encodedMessage, ws){
             const predictionOutput = lines[lines.length - 1].trim(); // takes the last line of prediction output
             console.log(`Prediction script output: ${predictionOutput}`)
 
-            ws.send(JSON.stringify({ "type": "expressions", "data": [ //TODO figure out why ten expression must be sent
-                predictionOutput,
-                "x^3",
-                "x^2",
-                "x^2",
-                "x^2",
-                "x^2",
-                "x^2",
-                "x^2",
-                "x^2",
-                "x^2",
-            ]}))
+            ws.send(JSON.stringify({
+                "type": "expressions", "data": [ //TODO figure out why ten expression must be sent
+                    predictionOutput,
+                    "x^3",
+                    "x^2",
+                    "x^2",
+                    "x^2",
+                    "x^2",
+                    "x^2",
+                    "x^2",
+                    "x^2",
+                    "x^2",
+                ]
+            }))
         })
 
     } else if (message.type === 'run-verif') {
@@ -79,9 +81,9 @@ function handleIncomingWebSockMessage(encodedMessage, ws){
         verifProcess.stdout.on('data', (data) => {
             console.log("verification stdout received:")
             console.log(JSON.stringify(data))
-            if(validateVerifResults(JSON.parse(data))){
+            if (validateVerifResults(JSON.parse(data))) {
                 ws.send(JSON.stringify({ "type": "verif-output", "data": data }))
-            }else{
+            } else {
                 console.log("verification output does not comply to schema!")
                 ws.send(JSON.stringify({ "type": "verif-status", "data": "ERROR" }))
             }
@@ -90,7 +92,7 @@ function handleIncomingWebSockMessage(encodedMessage, ws){
             console.log(data)
         })
         verifProcess.on('close', (code) => {
-            if (code != 0){ // return code 2 means expressions not equal
+            if (code != 0) { // return code 2 means expressions not equal
                 ws.send(JSON.stringify({ "type": "verif-status", "data": "ERROR" }))
             }
             console.log(`verification process exited with code ${code}`)
@@ -100,7 +102,7 @@ function handleIncomingWebSockMessage(encodedMessage, ws){
     }
 }
 
-function main(){
+function main() {
     initJsonSchemaValidators()
     const wss = new WebSocket.Server({ port: 8080 })
     wss.on('connection', function connection(ws) {
@@ -115,5 +117,5 @@ function main(){
 app.whenReady().then(main)
 
 app.on('window-all-closed', () => {
-    if(process.platform !== 'darwin') app.quit()
+    if (process.platform !== 'darwin') app.quit()
 })
