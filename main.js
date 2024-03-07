@@ -125,11 +125,11 @@ function main() {
     );
 
     image_from_serial_process.stdout.on('data', (data) => {
-        console.log(`stdout: ${data}`);
+        console.log(`images-from-serial.py stdout: ${data}`);
     });
 
     image_from_serial_process.stderr.on('data', (data) => {
-        console.error(`stderr: ${data}`);
+        console.error(`images-from-serial.py stderr: ${data}`);
     });
 
     image_from_serial_process.on('close', (code) => {
