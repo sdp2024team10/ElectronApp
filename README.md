@@ -1,10 +1,33 @@
-getting started:
-- make sure you have npm: https://nodejs.org/en
-- clone the repo to your local: git clone https://github.com/sdp2024team10/ElectronApp
-- npm install
+## Install
+
+clone this repo:
+```
+git clone https://github.com/sdp2024team10/ElectronApp
+```
+
+install node dependencies:
+```
+npm install
+```
+
+install python dependencies:
+```
+pip install -r ./requirements.txt
+```
+
+install OCR model
+```
+git clone https://github.com/Green-Wood/CoMER.git
+```
+
+update path to model in `env.base`
+
+## Run
 
 to run the app:
 npm start
+
+## Misc
 
 plan (need to implement branches currently everything is in origin):
 - push to develop branch for any non-complete changes
@@ -20,4 +43,3 @@ Process for committs and pushes currently (will be more robust soon):
 - git add <file>
 - git commit -m "commit message"
 - git push origin master
-
