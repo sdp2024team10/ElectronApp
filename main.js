@@ -119,7 +119,7 @@ function main() {
 
     const image_from_serial_process = spawn(
         process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
-        [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE]
+        [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE, 8080]
     );
 
     image_from_serial_process.stdout.on('data', (data) => {
