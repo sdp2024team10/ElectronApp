@@ -13,7 +13,7 @@ const WEBSOCK_PORT = 8080
 
 const ajv = new Ajv()
 const verifResultsSchema = JSON.parse(fs.readFileSync("src/verif-results-schema.json"))
-validateVerifResults = ajv.compile(verifResultsSchema)
+const validateVerifResults = ajv.compile(verifResultsSchema)
 
 const wss = new WebSocket.Server({ port: WEBSOCK_PORT })
 console.log(`WebSocket server started on ws://localhost:${WEBSOCK_PORT}`)
