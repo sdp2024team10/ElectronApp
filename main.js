@@ -10,6 +10,8 @@ const { exec } = require('child_process')
 const { spawn } = require('child_process')
 const Ajv = require('ajv')
 
+const WEBSOCK_PORT=8080
+
 const ajv = new Ajv()
 var validateVerifResults = null // defined by initJsonSchemaValidators()
 
@@ -109,7 +111,7 @@ function handleIncomingWebSockMessage(encodedMessage, ws) {
 
 function main() {
     initJsonSchemaValidators()
-    const wss = new WebSocket.Server({ port: 8080 })
+    const wss = new WebSocket.Server({ port: WEBSOCK_PORT })
     wss.on('connection', function connection(ws) {
         ws.on('message', function incoming(message) {
             handleIncomingWebSockMessage(message, ws)
@@ -119,7 +121,7 @@ function main() {
 
     const image_from_serial_process = spawn(
         process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
-        [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE, 8080]
+        [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE, WEBSOCK_PORT]
     );
 
     image_from_serial_process.stdout.on('data', (data) => {
