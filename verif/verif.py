@@ -8,7 +8,7 @@ from sympy.parsing.latex import parse_latex
 # from enforce_typing import enforce_types
 import jsonschema
 
-from verif_json_schema import input_schema
+from verif.verif_json_schema import input_schema
 
 results = {}
 
