@@ -12,10 +12,11 @@ const Ajv = require('ajv')
 const WEBSOCK_PORT = 8080
 
 const ajv = new Ajv()
-var validateVerifResults = null // defined by initJsonSchemaValidators()
+const verifResultsSchema = JSON.parse(fs.readFileSync("src/verif-results-schema.json"))
+validateVerifResults = ajv.compile(verifResultsSchema)
 
 const wss = new WebSocket.Server({ port: WEBSOCK_PORT })
-console.log('WebSocket server started on ws://localhost:8080')
+console.log(`WebSocket server started on ws://localhost:${WEBSOCK_PORT}`)
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -27,11 +28,6 @@ function createWindow() {
         }
     })
     win.loadFile('src/index.html')
-}
-
-function initJsonSchemaValidators() {
-    const verifResultsSchema = JSON.parse(fs.readFileSync("src/verif-results-schema.json"))
-    validateVerifResults = ajv.compile(verifResultsSchema)
 }
 
 function handleIncomingWebSockMessage(encodedMessage, ws) {
@@ -68,7 +64,8 @@ function handleIncomingWebSockMessage(encodedMessage, ws) {
     }
 }
 
-function broadcast(message) {
+function sendWebSockMessageToFrontend(message) {
+    // and also any other websocket listeners on this port
     wss.clients.forEach(function each(client) {
       if (client.readyState === WebSocket.OPEN) {
         client.send(message);
@@ -101,7 +98,7 @@ function spawnAndHandleLines(binary, args, options, stdout_handler, stderr_handl
 function handlePredictionStdoutLine(predictionStdoutLine) {
     // TODO validate schema
     console.log(`predict.py stdout: ${predictionStdoutLine}`)
-    broadcast(predictionStdoutLine) // send to frontend
+    sendWebSockMessageToFrontend(predictionStdoutLine)
 }
 
 function runPrediction(image_path) {
@@ -129,14 +126,12 @@ function handleImagesFromSerialStdoutLine(imagesFromSerialStdoutLine) {
 
 
 function main() {
-    initJsonSchemaValidators()
     wss.on('connection', function connection(ws) {
         ws.on('message', function incoming(message) {
             handleIncomingWebSockMessage(message, ws)
         })
     })
     console.log("websocket message handlers initialized")
-    createWindow()
     spawnAndHandleLines(
         process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
         [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE],
@@ -148,6 +143,7 @@ function main() {
             if (process.platform !== 'darwin') app.quit()
         }
     );
+    createWindow()
 }
 
 app.whenReady().then(main)
