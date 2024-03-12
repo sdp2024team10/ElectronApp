@@ -8,9 +8,6 @@ import sys
 import json
 from preprocess import preprocess
 
-
-sys.argv = ["", "image.jpeg"]
-
 CALIBRATION = {
     "crop_coords": [None, None, None, None],
     "black_white_thresh": None,
@@ -20,20 +17,18 @@ CALIBRATION = {
 
 
 class SelectCoordinates:
-    def __init__(self, master, path: str):
+    def __init__(self, master, image: Image):
         self.master = master
         self.canvas = tk.Canvas(master, cursor="cross")
         self.canvas.pack(fill=tk.BOTH, expand=True)
-        self.load_image(path)
+        self.load_image(image)
         self.dragging_point = None
 
-    def load_image(self, path: str):
-        self.master.filename = path
-        self.image = Image.open(self.master.filename)
+    def load_image(self, image: Image):
+        self.image = image
         self.cv_image = cv2.cvtColor(np.array(self.image), cv2.COLOR_RGB2BGR)
         self.tk_image = ImageTk.PhotoImage(self.image)
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.tk_image)
-        self.canvas.config(scrollregion=self.canvas.bbox(tk.ALL))
         self.set_initial_points()
 
     def set_initial_points(self):
@@ -94,26 +89,28 @@ class CalibrationOptions:
     def __init__(self, parent):
         self.parent = parent
         self.num_rows_slider = Scale(
-            parent, from_=1, to=15, orient=tk.HORIZONTAL, label="Num Rows"
+            parent, from_=1, to=15, orient=tk.HORIZONTAL, label="number of rows"
         )
         self.num_rows_slider.pack(fill=tk.X)
+        self.num_rows_slider.set(10)
 
         self.black_white_thresh_slider = Scale(
             parent,
             from_=0,
             to=255,
             orient=tk.HORIZONTAL,
-            label="Black-White Threshold",
+            label="black/white threshold",
         )
+        self.black_white_thresh_slider.set(145)
         self.black_white_thresh_slider.pack(fill=tk.X)
 
-        self.rotation_deg_options = ["90", "180", "270"]  # Rotation options
-        self.rotation_deg_label = ttk.Label(parent, text="Rotation Degrees")
+        self.rotation_deg_options = ["90", "180", "270"]
+        self.rotation_deg_label = ttk.Label(parent, text="rotation")
         self.rotation_deg_label.pack(fill=tk.X)
         self.rotation_deg_combobox = ttk.Combobox(
             parent, values=self.rotation_deg_options
         )
-        self.rotation_deg_combobox.set("90")  # Default value
+        self.rotation_deg_combobox.set("270")
         self.rotation_deg_combobox.pack(fill=tk.X)
 
         self.trim_left_slider = Scale(
@@ -123,6 +120,7 @@ class CalibrationOptions:
             orient=tk.HORIZONTAL,
             label="trim pixels left",
         )
+        self.trim_left_slider.set(5)
         self.trim_left_slider.pack(fill=tk.X)
         self.trim_right_slider = Scale(
             parent,
@@ -131,10 +129,12 @@ class CalibrationOptions:
             orient=tk.HORIZONTAL,
             label="trim pixels right",
         )
+        self.trim_right_slider.set(5)
         self.trim_right_slider.pack(fill=tk.X)
         self.trim_top_slider = Scale(
             parent, from_=0, to=255, orient=tk.HORIZONTAL, label="trim pixels top"
         )
+        self.trim_top_slider.set(5)
         self.trim_top_slider.pack(fill=tk.X)
         self.trim_bottom_slider = Scale(
             parent,
@@ -143,54 +143,116 @@ class CalibrationOptions:
             orient=tk.HORIZONTAL,
             label="trim pixels bottom",
         )
+        self.trim_bottom_slider.set(5)
         self.trim_bottom_slider.pack(fill=tk.X)
 
-        self.apply_button = ttk.Button(parent, text="Apply", command=self.apply_changes)
-        self.apply_button.pack(fill=tk.X)
 
-    def apply_changes(self):
-        CALIBRATION["num_rows"] = self.num_rows_slider.get()
-        CALIBRATION["black_white_thresh"] = self.black_white_thresh_slider.get()
-        CALIBRATION["rotation_deg"] = self.rotation_deg_combobox.get()
-        CALIBRATION["trim_sizes_px"] = {
-            "left": int(self.trim_left_slider.get()),
-            "right": int(self.trim_right_slider.get()),
-            "top": int(self.trim_top_slider.get()),
-            "bottom": int(self.trim_bottom_slider.get()),
-        }
-        print(json.dumps(CALIBRATION))
+class ScrollableImageFrame:
+    def __init__(self, root):
+        self.root = root
+        self.canvas = Canvas(root)
+        self.scrollbar = Scrollbar(root, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = tk.Frame(self.canvas)
 
-        # Here, call your function that processes these values and returns a list of image paths
-        # For example: image_paths = process_images(num_rows_val, black_white_thresh_val, ...)
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")),
+        )
 
-        # Then, clear existing images from the right pane and add new ones
-        # This part of the code will be dependent on how you've implemented image loading
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
+
+    def add_image(self, image):
+        photo_img = ImageTk.PhotoImage(image)
+        label = tk.Label(self.scrollable_frame, image=photo_img)
+        label.image = photo_img  # Keep a reference!
+        label.pack()
+
+    def clear(self):
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
 
 
 if __name__ == "__main__":
+    image = Image.open(sys.argv[1])
+
     root = tk.Tk()
     root.title("Calibration")
-    root.geometry("200x10")
+    root.geometry("200x55")
+
+    def do_nothing():
+        return
 
     select_coords_window = tk.Toplevel(root)
     select_coords_window.title("Select Points")
-    select_coords_window.geometry("640x360")  # Adjust size as needed
+    select_coords_window.geometry(f"{image.size[0]}x{image.size[1]}")
+    select_coords_window.protocol("WM_DELETE_WINDOW", do_nothing)
 
     options_window = tk.Toplevel(root)
     options_window.title("Options")
-    options_window.geometry("640x360")  # Adjust size as needed
+    options_window.geometry("300x450")
+    options_window.protocol("WM_DELETE_WINDOW", do_nothing)
 
     images_window = tk.Toplevel(root)
-    images_window.title("Images")
-    images_window.geometry("640x360")  # Adjust size as needed
+    images_window.title("Preprocessing Output")
+    images_window.geometry("640x360")
+    images_window.protocol("WM_DELETE_WINDOW", do_nothing)
 
-    app = SelectCoordinates(select_coords_window, sys.argv[1])
+    coordinate_selection = SelectCoordinates(select_coords_window, image)
 
     options = CalibrationOptions(options_window)
 
+    output_image_frame = ScrollableImageFrame(images_window)
+
+    def run_preprocessing():
+        output_image_frame.clear()
+        preprocessing_output = preprocess(
+            image,
+            options.num_rows_slider.get(),
+            options.black_white_thresh_slider.get(),
+            int(options.rotation_deg_combobox.get()),
+            coordinate_selection.points,
+            {
+                "left": int(options.trim_left_slider.get()),
+                "right": int(options.trim_right_slider.get()),
+                "top": int(options.trim_top_slider.get()),
+                "bottom": int(options.trim_bottom_slider.get()),
+            },
+        )
+        for output_image in preprocessing_output:
+            output_image_frame.add_image(output_image)
+
+    test_button = ttk.Button(root, text="Test", command=run_preprocessing)
+    test_button.pack(fill=tk.X)
+
+    def export_exit():
+        print(
+            json.dumps(
+                {
+                    "num_rows": int(options.num_rows_slider.get()),
+                    "black_white_thresh": int(options.black_white_thresh_slider.get()),
+                    "rotation_deg": int(options.rotation_deg_combobox.get()),
+                    "crop_coords": coordinate_selection.points,
+                    "trim_sizes_px": {
+                        "left": int(options.trim_left_slider.get()),
+                        "right": int(options.trim_right_slider.get()),
+                        "top": int(options.trim_top_slider.get()),
+                        "bottom": int(options.trim_bottom_slider.get()),
+                    },
+                }
+            )
+        )
+        root.destroy()
+        quit()
+
+    export_exit_button = ttk.Button(root, text="Save & Exit", command=export_exit)
+    export_exit_button.pack(fill=tk.X)
+
     # Creating a frame within the canvas for the images
     images_frame = ttk.Frame(images_window)
-
     images_canvas = Canvas(images_frame)
     images_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     scrollbar_images = Scrollbar(
