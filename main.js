@@ -18,6 +18,9 @@ const validateVerifResults = ajv.compile(verifResultsSchema)
 const wss = new WebSocket.Server({ port: WEBSOCK_PORT })
 console.log(`WebSocket server started on ws://localhost:${WEBSOCK_PORT}`)
 
+var calibration = {}
+var image_path = ""
+
 function createWindow() {
     const win = new BrowserWindow({
         width: 768,
@@ -29,49 +32,6 @@ function createWindow() {
     })
     win.loadFile('src/index.html')
 }
-
-function handleIncomingWebSockMessage(encodedMessage, ws) {
-    const message = JSON.parse(encodedMessage)
-    console.log(message)
-    if (message.type === 'run-verif') {
-        ws.send(JSON.stringify({ "type": "verif-status", "data": "verification running..." }))
-        const verif_cmd = `${process.env.VERIF_PYTHON_PATH} ${process.env.VERIF_PATH}`
-        console.log(`executing \"${verif_cmd}\" ...`)
-        const verifProcess = exec(verif_cmd, { cwd: process.env.VERIF_CWD })
-        verifProcess.stdin.write(JSON.stringify(message.data))
-        verifProcess.stdin.end()
-        verifProcess.stdout.on('data', (data) => {
-            console.log("verification stdout received:")
-            console.log(JSON.stringify(data))
-            if (validateVerifResults(JSON.parse(data))) {
-                ws.send(JSON.stringify({ "type": "verif-output", "data": data }))
-            } else {
-                console.log("verification output does not comply to schema!")
-                ws.send(JSON.stringify({ "type": "verif-status", "data": "ERROR" }))
-            }
-        })
-        verifProcess.stderr.on('data', (data) => {
-            console.log(data)
-        })
-        verifProcess.on('close', (code) => {
-            if (code != 0) { // return code 2 means expressions not equal
-                ws.send(JSON.stringify({ "type": "verif-status", "data": "ERROR" }))
-            }
-            console.log(`verification process exited with code ${code}`)
-        })
-    } else {
-        console.log(`ERROR: unrecognized message of type \"${message.type}\"\n${message.data}`)
-    }
-}
-
-function sendWebSockMessageToFrontend(message) {
-    // and also any other websocket listeners on this port
-    wss.clients.forEach(function each(client) {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message);
-      }
-    });
-  }
 
 function spawnAndHandleLines(binary, args, options, stdout_handler, stderr_handler, exit_handler) {
     console.log(`starting binary ${binary} with args ${JSON.stringify(args)} and options ${JSON.stringify(options)}`)
@@ -95,16 +55,45 @@ function spawnAndHandleLines(binary, args, options, stdout_handler, stderr_handl
     });
 }
 
+function sendWebSockMessageToFrontend(message) {
+    // and also any other websocket listeners on this port
+    wss.clients.forEach(function each(client) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    });
+  }
+
+function handleImageFromSerialStdoutLine(imageFromSerialStdoutLine) {
+    try {
+        image_path = JSON.parse(imageFromSerialStdoutLine)["image_path"]
+        console.log(`image path received from image-from-serial.py: ${image_path}`)
+    } catch (error) {
+        console.log(`image-from-serial.py stdout: ${imageFromSerialStdoutLine}`)
+        return
+    }
+}
+
 function handlePredictionStdoutLine(predictionStdoutLine) {
     // TODO validate schema
     console.log(`predict.py stdout: ${predictionStdoutLine}`)
     sendWebSockMessageToFrontend(predictionStdoutLine)
 }
 
-function runPrediction(image_path) {
+function handleCalibrateStdoutLine(calibrateStdoutLine) {
+    try {
+        calibration = JSON.parse(calibrateStdoutLine)["calibration"]
+        console.log("calibration received from calibrate.py")
+    } catch (error) {
+        console.log(`calibrate.py stdout: ${imageFromSerialStdoutLine}`)
+        return
+    }
+}
+
+function runPrediction() {
     spawnAndHandleLines(
         process.env.PREDICT_PYTHON_PATH,
-        [process.env.PREDICT_PATH, image_path],
+        [process.env.PREDICT_PATH, image_path, JSON.stringify(calibration)],
         { cwd: process.env.PREDICT_CWD },
         line => handlePredictionStdoutLine(line),
         line => console.log(`predict.py stderr : ${line}`),
@@ -112,16 +101,64 @@ function runPrediction(image_path) {
     );
 }
 
-function handleImagesFromSerialStdoutLine(imagesFromSerialStdoutLine) {
-    // if the line is an image path, then run a prediction
-    var image_path = null
-    try {
-        image_path = JSON.parse(imagesFromSerialStdoutLine)["image_path"]
-    } catch (error) {
-        console.log(`images-from-serial.py stdout: ${imagesFromSerialStdoutLine}`)
-        return
+function handleIncomingWebSockMessage(encodedMessage, ws) {
+    const message = JSON.parse(encodedMessage)
+    console.log(message)
+    if (message.type === 'run-verif') {
+        ws.send(JSON.stringify({ "type": "status", "data": "verification running..." }))
+        const verif_cmd = `${process.env.VERIF_PYTHON_PATH} ${process.env.VERIF_PATH}`
+        console.log(`executing \"${verif_cmd}\" ...`)
+        const verifProcess = exec(verif_cmd, { cwd: process.env.VERIF_CWD })
+        verifProcess.stdin.write(JSON.stringify(message.data))
+        verifProcess.stdin.end()
+        verifProcess.stdout.on('data', (data) => {
+            console.log("verification stdout received:")
+            console.log(JSON.stringify(data))
+            if (validateVerifResults(JSON.parse(data))) {
+                ws.send(JSON.stringify({ "type": "verif-output", "data": data }))
+            } else {
+                console.log("verification output does not comply to schema!")
+                ws.send(JSON.stringify({ "type": "status", "data": "ERROR" }))
+            }
+        })
+        verifProcess.stderr.on('data', (data) => {
+            console.log(data)
+        })
+        verifProcess.on('close', (code) => {
+            if (code != 0) { // return code 2 means expressions not equal
+                ws.send(JSON.stringify({ "type": "status", "data": "ERROR" }))
+            }
+            console.log(`verification process exited with code ${code}`)
+        })
+    } else if (message.type == 'run-prediction') {
+        if (calibration == {}){
+            ws.send(JSON.stringify({ "type": "status", "data": "ERROR: you must calibrate before you can predict!" }))
+        }
+        runPrediction()
+    } else if (message.type == 'take-picture') {
+        spawnAndHandleLines(
+            process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
+            [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE],
+            {}, // Options
+            line => handleImageFromSerialStdoutLine(line),
+            line => console.log(`image-from-serial.py stderr : ${line}`),
+            (code) => console.log(`image-from-serial.py exited with code ${code}`)
+        );
+    } else if (message.type == 'calibrate') {
+        if (image_path == {}){
+            ws.send(JSON.stringify({ "type": "status", "data": "ERROR: you must take a picture before you can calibrate!" }))
+        }
+        spawnAndHandleLines(
+            process.env.CALIBRATE_PYTHON_PATH,
+            [process.env.CALIBRATE_PATH, image_path],
+            { cwd: process.env.CALIBRATE_CWD },
+            line => handleCalibrateStdoutLine(line),
+            line => console.log(`calibrate.py stderr : ${line}`),
+            (code) => console.log(`calibrate.py exited with code ${code}`)
+        );
+    }else {
+        console.log(`ERROR: unrecognized message of type \"${message.type}\"\n${message.data}`)
     }
-    runPrediction(image_path)
 }
 
 
@@ -131,18 +168,6 @@ function main() {
             handleIncomingWebSockMessage(message, ws)
         })
     })
-    console.log("websocket message handlers initialized")
-    spawnAndHandleLines(
-        process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
-        [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE],
-        {}, // Options
-        line => handleImagesFromSerialStdoutLine(line),
-        line => console.log(`images-from-serial.py stderr : ${line}`),
-        (code) => {
-            console.log(`images-from-serial.py exited with code ${code}`)
-            if (process.platform !== 'darwin') app.quit()
-        }
-    );
     createWindow()
 }
 

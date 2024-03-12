@@ -9,7 +9,7 @@ requires HTML elements with the following IDs:
   min-difference-detect-error
   expressions-table (table)
   run-verif-button (button)
-  verif-status
+  status
   chart (canvas)
 */
 
@@ -145,7 +145,7 @@ function clearChart() {
 }
 
 function updateStatusElement(x) {
-    document.getElementById('verif-status').textContent = x.toString()
+    document.getElementById('status').textContent = x.toString()
 }
 
 function displayVerifResults(results) {
@@ -189,7 +189,7 @@ function main() {
         console.log(event.data)
         var message = JSON.parse(event.data)
         switch (message.type) {
-            case "verif-status":
+            case "status":
                 updateStatusElement(message["data"])
                 break
             case "verif-output":
@@ -217,6 +217,12 @@ function main() {
     })
     document.getElementById('run-pred-button').addEventListener('click', function () {
         ws.send(JSON.stringify({ type: 'run-prediction' }));
+    })
+    document.getElementById('take-picture-button').addEventListener('click', function () {
+        ws.send(JSON.stringify({ type: 'take-picture', data: verifParameters }))
+    })
+    document.getElementById('calibrate-button').addEventListener('click', function () {
+        ws.send(JSON.stringify({ type: 'calibrate' }));
     })
     for (var i = 0; i < NUM_EXPRESSIONS; i++) {
         addExpressionField()
