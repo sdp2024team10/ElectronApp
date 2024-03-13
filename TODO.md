@@ -13,3 +13,5 @@
 * allow user to kill ongoing predictions
 * undo/redo in expression boxes
 * add button to clear all expressions
+* handle infinity in verification, x^-2=inf
+* error if more than one unknown variable
