@@ -5,7 +5,7 @@ import json
 import torch
 import datetime
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 from typing import List
 from IPython.display import display
 from torchvision.transforms import ToTensor
@@ -31,6 +31,10 @@ model = model.to(device)
 
 
 def predict(image: Image) -> str:
+    desired_size = (249, 144)
+    image = ImageOps.fit(image, desired_size, Image.ANTIALIAS)  
+    # img = Image.open('/Users/jordanandrade/Electronapp/scripts/UN19_1041_em_595.bmp')
+    image.show(title="Resized Image")
     img_tensor = ToTensor()(image)
     mask = torch.zeros_like(img_tensor, dtype=torch.bool)
     hyp = model.approximate_joint_search(img_tensor.unsqueeze(0), mask)[0]

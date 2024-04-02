@@ -136,14 +136,16 @@ function handleIncomingWebSockMessage(encodedMessage, ws) {
         }
         runPrediction()
     } else if (message.type == 'take-picture') {
-        spawnAndHandleLines(
-            process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
-            [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE],
-            {}, // Options
-            line => handleImageFromSerialStdoutLine(line),
-            line => console.log(`image-from-serial.py stderr : ${line}`),
-            (code) => console.log(`image-from-serial.py exited with code ${code}`)
-        );
+        // spawnAndHandleLines(
+        //     process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
+        //     [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE],
+        //     {}, // Options
+        //     line => handleImageFromSerialStdoutLine(line),
+        //     line => console.log(`image-from-serial.py stderr : ${line}`),
+        //     (code) => console.log(`image-from-serial.py exited with code ${code}`)
+        // );
+        const testImagePath = '../testimg.jpeg';
+        handleImageFromSerialStdoutLine(JSON.stringify({ "image_path": testImagePath }));
     } else if (message.type == 'calibrate') {
         if (image_path == {}){
             ws.send(JSON.stringify({ "type": "status", "data": "ERROR: you must take a picture before you can calibrate!" }))
