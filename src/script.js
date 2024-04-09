@@ -182,6 +182,11 @@ function renderLatex(latexString, elementId) {
     }
 }
 
+function clearExpressions() {
+    expressionMathFields.forEach(field => field.latex(''));  // Clear each MathQuill field
+    console.log("All expressions cleared.");
+}
+
 function main() {
     var ws = new WebSocket('ws://localhost:8080')
     console.log("hello, world!")
@@ -224,6 +229,7 @@ function main() {
     document.getElementById('calibrate-button').addEventListener('click', function () {
         ws.send(JSON.stringify({ type: 'calibrate' }));
     })
+    document.getElementById('clear-expressions-button').addEventListener('click', clearExpressions);
     for (var i = 0; i < NUM_EXPRESSIONS; i++) {
         addExpressionField()
     }
