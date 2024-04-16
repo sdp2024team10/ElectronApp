@@ -164,6 +164,14 @@ function handlePredictionRequest(message, ws) {
 }
 
 function handleTakePictureRequest(message, ws) {
+    // spawnAndHandleLines(
+        //     process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
+        //     [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE],
+        //     {}, // Options
+        //     line => handleImageFromSerialStdoutLine(line),
+        //     line => console.log(`image-from-serial.py stderr : ${line}`),
+        //     (code) => console.log(`image-from-serial.py exited with code ${code}`)
+        // );
     const testImagePath = '../testimg.jpeg';
     handleImageFromSerialStdoutLine(JSON.stringify({ "image_path": testImagePath }));
 }
