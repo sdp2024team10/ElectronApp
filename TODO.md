@@ -1,17 +1,16 @@
 * ELECTRONAPP
 * select serial port from dropdown (i think we want to reduce manual selection of the user and keep it one port)
-* show confidence values
-* allow nodejs to decide when picture is taken (doesnt it already do this)
-* prediction results json schema
-* send more information to the `status` box on the frontend
-* 8080 is still hard coded in script.js (just add variable in .env.base)
+* 8080 is still hard coded in script.js (done)
 * add PIDs to logs for subprocesses 
 * inconsistent handling of `message.data` / `message["data"]`
 * break `handleIncomingWebSockMessage()` into separate functions
 * substitute `ws.send` for `sendWebSockMessageToFrontend()`
 * `if (process.platform !== 'darwin') app.quit()`: why would we decide not to quit when running on mac?
 * allow user to kill ongoing predictions
-* undo/redo in expression boxes
+
+* MAYBES
+* show confidence values
+* send more information to the `status` box on the frontend
 
 * VERIF.py 
 * handle infinity in verification, x^-2=inf

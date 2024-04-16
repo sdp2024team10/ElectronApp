@@ -9,7 +9,7 @@ const { exec } = require('child_process')
 const { spawn } = require('child_process')
 const Ajv = require('ajv')
 
-const WEBSOCK_PORT = 8080
+const WEBSOCK_PORT = process.env.PORT || 8080;
 
 const ajv = new Ajv()
 const verifResultsSchema = JSON.parse(fs.readFileSync("src/verif-results-schema.json"))
