@@ -1,6 +1,5 @@
-* ELECTRONAPP
+* Should we still do this?
 * select serial port from dropdown
-* break `handleIncomingWebSockMessage()` into separate functions
 * allow user to kill ongoing predictions
 
 * VERIF.py 

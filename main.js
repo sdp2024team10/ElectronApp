@@ -108,66 +108,84 @@ function runPrediction() {
 }
 
 function handleIncomingWebSockMessage(encodedMessage, ws) {
-    const message = JSON.parse(encodedMessage)
-    console.log(message)
-    if (message.type === 'run-verif') {
-        sendWebSockMessageToFrontend(JSON.stringify({ "type": "status", "data": "verification running..." }), ws);
-        const verif_cmd = `${process.env.VERIF_PYTHON_PATH} ${process.env.VERIF_PATH}`
-        console.log(`executing \"${verif_cmd}\" ...`)
-        const verifProcess = exec(verif_cmd, { cwd: process.env.VERIF_CWD })
-        verifProcess.stdin.write(JSON.stringify(message.data))
-        verifProcess.stdin.end()
-        verifProcess.stdout.on('data', (data) => {
-            console.log("verification stdout received:")
-            console.log(JSON.stringify(data))
-            if (validateVerifResults(JSON.parse(data))) {
-                sendWebSockMessageToFrontend(JSON.stringify({ "type": "verif-output", "data": data }), ws);
-            } else {
-                sendWebSockMessageToFrontend(JSON.stringify({ "type": "status", "data": "ERROR" }), ws);
-            }            
-        })
-        verifProcess.stderr.on('data', (data) => {
-            console.log(data)
-        })
-        verifProcess.on('close', (code) => {
-            if (code != 0) { // return code 2 means expressions not equal
-                sendWebSockMessageToFrontend(JSON.stringify({ "type": "status", "data": "ERROR" }), ws);
-            }
-            console.log(`verification process exited with code ${code}`)
-        })
-    } else if (message.type == 'run-prediction') {
-        if (calibration == {}){
-            sendWebSockMessageToFrontend(JSON.stringify({ "type": "status", "data": "ERROR: you must calibrate before you can predict!" }), ws);
+    const message = JSON.parse(encodedMessage);
+    console.log(message);
+    switch (message.type) {
+        case 'run-verif':
+            handleVerificationRequest(message, ws);
+            break;
+        case 'run-prediction':
+            handlePredictionRequest(message, ws);
+            break;
+        case 'take-picture':
+            handleTakePictureRequest(message, ws);
+            break;
+        case 'calibrate':
+            handleCalibrationRequest(message, ws);
+            break;
+        default:
+            handleUnknownMessageType(message, ws);
+    }
+}
+
+function handleVerificationRequest(message, ws) {
+    sendWebSockMessageToFrontend(JSON.stringify({ "type": "status", "data": "verification running..." }), ws);
+    const verif_cmd = `${process.env.VERIF_PYTHON_PATH} ${process.env.VERIF_PATH}`;
+    console.log(`executing "${verif_cmd}" ...`);
+    const verifProcess = exec(verif_cmd, { cwd: process.env.VERIF_CWD });
+    verifProcess.stdin.write(JSON.stringify(message.data));
+    verifProcess.stdin.end();
+    verifProcess.stdout.on('data', (data) => {
+        console.log("verification stdout received:");
+        console.log(JSON.stringify(data));
+        if (validateVerifResults(JSON.parse(data))) {
+            sendWebSockMessageToFrontend(JSON.stringify({ "type": "verif-output", "data": data }), ws);
+        } else {
+            sendWebSockMessageToFrontend(JSON.stringify({ "type": "status", "data": "ERROR" }), ws);
         }
-        runPrediction()
-    } else if (message.type == 'take-picture') {
-        // spawnAndHandleLines(
-        //     process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
-        //     [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE],
-        //     {}, // Options
-        //     line => handleImageFromSerialStdoutLine(line),
-        //     line => console.log(`image-from-serial.py stderr : ${line}`),
-        //     (code) => console.log(`image-from-serial.py exited with code ${code}`)
-        // );
-        const testImagePath = '../testimg.jpeg';
-        handleImageFromSerialStdoutLine(JSON.stringify({ "image_path": testImagePath }));
-    } else if (message.type == 'calibrate') {
-        if (image_path == {}){
-            sendWebSockMessageToFrontend(JSON.stringify({ "type": "status", "data": "ERROR: you must take a picture before you can calibrate!" }), ws);
+    });
+    verifProcess.stderr.on('data', (data) => {
+        console.log(data);
+    });
+    verifProcess.on('close', (code) => {
+        if (code != 0) {
+            sendWebSockMessageToFrontend(JSON.stringify({ "type": "status", "data": "ERROR" }), ws);
         }
+        console.log(`verification process exited with code ${code}`);
+    });
+}
+
+function handlePredictionRequest(message, ws) {
+    if (calibration == {}) {
+        sendWebSockMessageToFrontend(JSON.stringify({ "type": "status", "data": "ERROR: you must calibrate before you can predict!" }), ws);
+    } else {
+        runPrediction();
+    }
+}
+
+function handleTakePictureRequest(message, ws) {
+    const testImagePath = '../testimg.jpeg';
+    handleImageFromSerialStdoutLine(JSON.stringify({ "image_path": testImagePath }));
+}
+
+function handleCalibrationRequest(message, ws) {
+    if (image_path == {}) {
+        sendWebSockMessageToFrontend(JSON.stringify({ "type": "status", "data": "ERROR: you must take a picture before you can calibrate!" }), ws);
+    } else {
         spawnAndHandleLines(
             process.env.CALIBRATE_PYTHON_PATH,
             [process.env.CALIBRATE_PATH, image_path],
             { cwd: process.env.CALIBRATE_CWD },
             line => handleCalibrateStdoutLine(line),
-            line => console.log(`calibrate.py stderr : ${line}`),
-            (code) => console.log(`calibrate.py exited with code ${code}`)
+            line => console.log(`calibrate.py stderr: ${line}`),
+            code => console.log(`calibrate.py exited with code ${code}`)
         );
-    }else {
-        console.log(`ERROR: unrecognized message of type \"${message.type}\"\n${message.data}`)
     }
 }
 
+function handleUnknownMessageType(message, ws) {
+    console.log(`ERROR: unrecognized message of type "${message.type}"\n${message.data}`);
+}
 
 function main() {
     wss.on('connection', function connection(ws) {
