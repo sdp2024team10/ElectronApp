@@ -55,14 +55,18 @@ function spawnAndHandleLines(binary, args, options, stdout_handler, stderr_handl
     });
 }
 
-function sendWebSockMessageToFrontend(message) {
-    // and also any other websocket listeners on this port
-    wss.clients.forEach(function each(client) {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message);
-      }
-    });
-  }
+function sendWebSockMessageToFrontend(message, client = null) {
+    if (client && client.readyState === WebSocket.OPEN) {
+        client.send(message); // Send to a specific client
+    } else {
+        wss.clients.forEach(function each(client) {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(message); // Broadcast to all clients
+            }
+        });
+    }
+}
+
 
 function handleImageFromSerialStdoutLine(imageFromSerialStdoutLine) {
     try {
@@ -105,7 +109,7 @@ function handleIncomingWebSockMessage(encodedMessage, ws) {
     const message = JSON.parse(encodedMessage)
     console.log(message)
     if (message.type === 'run-verif') {
-        ws.send(JSON.stringify({ "type": "status", "data": "verification running..." }))
+        sendWebSockMessageToFrontend(JSON.stringify({ "type": "status", "data": "verification running..." }), ws);
         const verif_cmd = `${process.env.VERIF_PYTHON_PATH} ${process.env.VERIF_PATH}`
         console.log(`executing \"${verif_cmd}\" ...`)
         const verifProcess = exec(verif_cmd, { cwd: process.env.VERIF_CWD })
@@ -115,24 +119,23 @@ function handleIncomingWebSockMessage(encodedMessage, ws) {
             console.log("verification stdout received:")
             console.log(JSON.stringify(data))
             if (validateVerifResults(JSON.parse(data))) {
-                ws.send(JSON.stringify({ "type": "verif-output", "data": data }))
+                sendWebSockMessageToFrontend(JSON.stringify({ "type": "verif-output", "data": data }), ws);
             } else {
-                console.log("verification output does not comply to schema!")
-                ws.send(JSON.stringify({ "type": "status", "data": "ERROR" }))
-            }
+                sendWebSockMessageToFrontend(JSON.stringify({ "type": "status", "data": "ERROR" }), ws);
+            }            
         })
         verifProcess.stderr.on('data', (data) => {
             console.log(data)
         })
         verifProcess.on('close', (code) => {
             if (code != 0) { // return code 2 means expressions not equal
-                ws.send(JSON.stringify({ "type": "status", "data": "ERROR" }))
+                sendWebSockMessageToFrontend(JSON.stringify({ "type": "status", "data": "ERROR" }), ws);
             }
             console.log(`verification process exited with code ${code}`)
         })
     } else if (message.type == 'run-prediction') {
         if (calibration == {}){
-            ws.send(JSON.stringify({ "type": "status", "data": "ERROR: you must calibrate before you can predict!" }))
+            sendWebSockMessageToFrontend(JSON.stringify({ "type": "status", "data": "ERROR: you must calibrate before you can predict!" }), ws);
         }
         runPrediction()
     } else if (message.type == 'take-picture') {
@@ -148,7 +151,7 @@ function handleIncomingWebSockMessage(encodedMessage, ws) {
         handleImageFromSerialStdoutLine(JSON.stringify({ "image_path": testImagePath }));
     } else if (message.type == 'calibrate') {
         if (image_path == {}){
-            ws.send(JSON.stringify({ "type": "status", "data": "ERROR: you must take a picture before you can calibrate!" }))
+            sendWebSockMessageToFrontend(JSON.stringify({ "type": "status", "data": "ERROR: you must take a picture before you can calibrate!" }), ws);
         }
         spawnAndHandleLines(
             process.env.CALIBRATE_PYTHON_PATH,
