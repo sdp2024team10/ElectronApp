@@ -1,6 +1,5 @@
 * ELECTRONAPP
 * select serial port from dropdown
-* add PIDs to logs for subprocesses 
 * break `handleIncomingWebSockMessage()` into separate functions
 * allow user to kill ongoing predictions
 

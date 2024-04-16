@@ -34,24 +34,26 @@ function createWindow() {
 }
 
 function spawnAndHandleLines(binary, args, options, stdout_handler, stderr_handler, exit_handler) {
-    console.log(`starting binary ${binary} with args ${JSON.stringify(args)} and options ${JSON.stringify(options)}`)
+    console.log(`Starting binary ${binary} with args ${JSON.stringify(args)} and options ${JSON.stringify(options)}`);
     const thisProcess = spawn(binary, args, options);
+    console.log(`Spawned process PID: ${thisProcess.pid}`);  // Log the PID of the subprocess
     const rlStdout = readline.createInterface({
         input: thisProcess.stdout,
         crlfDelay: Infinity
     });
     rlStdout.on('line', (line) => {
-        stdout_handler(line)
+        stdout_handler(line);
     });
     const rlStderr = readline.createInterface({
         input: thisProcess.stderr,
         crlfDelay: Infinity
     });
     rlStderr.on('line', (line) => {
-        stderr_handler(line)
+        stderr_handler(line);
     });
     thisProcess.on('close', (code) => {
-        exit_handler(code)
+        console.log(`Process with PID ${thisProcess.pid} exited with code ${code}`);  // Log when the process exits and its exit code
+        exit_handler(code);
     });
 }
 
