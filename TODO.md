@@ -1,7 +1,6 @@
 * ELECTRONAPP
 * select serial port from dropdown
 * add PIDs to logs for subprocesses 
-* inconsistent handling of `message.data` / `message["data"]`
 * break `handleIncomingWebSockMessage()` into separate functions
 * allow user to kill ongoing predictions
 
@@ -11,5 +10,3 @@
 * equalities
 * vertical lines
 * undefined values in plot: remove from all graphs and print message to user showing undefined ranges/points
-
-* CoMER git submodule (for what?)

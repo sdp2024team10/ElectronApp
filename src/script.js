@@ -195,21 +195,21 @@ function main() {
         var message = JSON.parse(event.data)
         switch (message.type) {
             case "status":
-                updateStatusElement(message["data"])
+                updateStatusElement(message.data)
                 break
             case "verif-output":
-                var messageData = JSON.parse(message["data"]) // unclear why I need to parse twice
+                var messageData = JSON.parse(message.data) // unclear why I need to parse twice
                 displayVerifResults(messageData) // this also does updateStatusElement()
-                const equation1 = messageData["equation1"];
-                const equation2 = messageData["equation2"];
+                const equation1 = messageData.equation1;
+                const equation2 = messageData.equation2;
                 const problem = `You are an assistant in our algebraic debugger. You need to output a response explaining why the step from ${equation1} to ${equation2} is incorrect`;
                 getMathExplanation(problem);
                 break
             case "prediction-result":
                 console.log("prediction result received!")
-                console.log(message["data"])
-                index = message["data"].index
-                newExpression = message["data"].latex
+                console.log(message.data)
+                index = message.data.index
+                newExpression = message.data.latex
                 expressionMathFields[index].latex(newExpression)
                 break
             default:
