@@ -37,8 +37,8 @@ window.getMathExplanation = async function (problemDescription) {
         // Extracting the content from the response
         const explanation = response.data.choices[0].message.content;
 
-        // Update the DOM with the explanation
-        document.getElementById('math-explanation').innerText = explanation;
+        const mathExplanationElement = document.getElementById('math-explanation');
+        mathExplanationElement.innerHTML = "<strong>Here is why it is incorrect:</strong><br>" + explanation;
     } catch (error) {
         console.error("Error getting explanation:", error);
         document.getElementById('math-explanation').innerText = "Error getting explanation.";
@@ -143,22 +143,24 @@ function clearChart() {
     chart.update()
 }
 
-function updateStatusElement(x) {
-    document.getElementById('status').textContent = x.toString()
+function updateStatusElement(message) {
+    var statusTextElement = document.getElementById('status-text');
+    statusTextElement.innerHTML = message;  // Now safely updating the inner span
 }
 
+
 function displayVerifResults(results) {
-    if (results["all-equal"] == true) {
-        updateStatusElement("all expressions are equal!")
-        clearChart()
+    if (results["all-equal"] === true) {
+        updateStatusElement("All expressions are equal!");
+        clearChart();
     } else {
-        let [beforeIndex, afterIndex] = results["first-non-equal-indexes"]
-        updateStatusElement(`expression #${afterIndex} is different from expression #${beforeIndex}`)
-        chart.data.datasets[0].data = convertToChartData(results["x-axis-array"], results["y-axis-array1"])
-        chart.data.datasets[0].label = `expression #${beforeIndex}`
-        chart.data.datasets[1].data = convertToChartData(results["x-axis-array"], results["y-axis-array2"])
-        chart.data.datasets[1].label = `expression #${afterIndex}`
-        chart.update()
+        let [beforeIndex, afterIndex] = results["first-non-equal-indexes"];
+        updateStatusElement(`<span class="error-message">Error!</span> Expression ${afterIndex} is different from Expression ${beforeIndex}.`);
+        chart.data.datasets[0].data = convertToChartData(results["x-axis-array"], results["y-axis-array1"]);
+        chart.data.datasets[0].label = `Expression #${beforeIndex}`;
+        chart.data.datasets[1].data = convertToChartData(results["x-axis-array"], results["y-axis-array2"]);
+        chart.data.datasets[1].label = `Expression #${afterIndex}`;
+        chart.update(); 
     }
 }
 
