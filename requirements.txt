@@ -9,3 +9,4 @@ pyserial==3.5
 referencing==0.33.0
 rpds-py==0.18.0
 sympy==1.12
+opencv-python
