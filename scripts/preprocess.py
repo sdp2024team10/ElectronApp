@@ -1,4 +1,4 @@
-#from PIL import Image, ImageFilter
+# from PIL import Image, ImageFilter
 from PIL.Image import Image as PILImage
 from PIL import Image as PILImageModule
 import numpy as np
@@ -9,6 +9,7 @@ import cv2
 
 def convert_black_white(image: PILImage, threshold=150) -> PILImage:
     return image.convert("L").point(lambda x: 255 if x < threshold else 0, "1")
+
 
 def split_rows(image: PILImage, num_segments: int) -> List[PILImage]:
     output = []
@@ -23,16 +24,22 @@ def split_rows(image: PILImage, num_segments: int) -> List[PILImage]:
     return output
 
 
-
 def strip_black_edges(image: PILImage, padding=10) -> PILImage:
     bw_array = np.array(image.convert("L"))
     if np.all(bw_array == 255):  # Changed to 255 to denote white in a binary image
-        print("Warning: attempted to strip black edges from entirely white image!", file=sys.stderr)
+        print(
+            "Warning: attempted to strip black edges from entirely white image!",
+            file=sys.stderr,
+        )
         return image
 
     def find_non_white_edges(arr):
-        rows = np.where(np.any(arr == 0, axis=1))[0]  # Changed to find non-white (black) rows
-        cols = np.where(np.any(arr == 0, axis=0))[0]  # Changed to find non-white (black) cols
+        rows = np.where(np.any(arr == 0, axis=1))[
+            0
+        ]  # Changed to find non-white (black) rows
+        cols = np.where(np.any(arr == 0, axis=0))[
+            0
+        ]  # Changed to find non-white (black) cols
         if len(rows) == 0 or len(cols) == 0:  # Added check to prevent index errors
             return 0, arr.shape[0] - 1, 0, arr.shape[1] - 1
         return rows[0], rows[-1], cols[0], cols[-1]
@@ -44,7 +51,10 @@ def strip_black_edges(image: PILImage, padding=10) -> PILImage:
     last_col = min(bw_array.shape[1], last_col + padding)
 
     stripped_arr = bw_array[first_row : last_row + 1, first_col : last_col + 1]
-    return PILImageModule.fromarray(stripped_arr).convert("1")  # Convert back to binary mode
+    return PILImageModule.fromarray(stripped_arr).convert(
+        "1"
+    )  # Convert back to binary mode
+
 
 def trim(image: PILImage, trim_sizes_px: dict) -> PILImage:
     width, height = image.size
@@ -53,6 +63,7 @@ def trim(image: PILImage, trim_sizes_px: dict) -> PILImage:
     right = width - trim_sizes_px.get("right", 0)
     lower = height - trim_sizes_px.get("bottom", 0)
     return image.crop((left, upper, right, lower))
+
 
 def crop(image: PILImage, crop_coords) -> PILImage:
     cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)

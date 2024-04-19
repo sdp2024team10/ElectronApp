@@ -19,6 +19,7 @@ model = model.eval()
 device = torch.device("cpu")
 model = model.to(device)
 
+
 def predict(image: Image, index: int, start_time: datetime.datetime) -> dict:
     desired_size = (249, 144)
     image = ImageOps.fit(image, desired_size, Image.ANTIALIAS)
@@ -31,6 +32,7 @@ def predict(image: Image, index: int, start_time: datetime.datetime) -> dict:
     prediction_time = datetime.datetime.now() - start_time
 
     return {"index": index, "latex": pred_latex, "time": str(prediction_time)}
+
 
 if __name__ == "__main__":
     image_path, preprocessing_calibration_str = sys.argv[1:]
@@ -49,7 +51,10 @@ if __name__ == "__main__":
 
     # Execute predictions in parallel
     with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
-        futures = {executor.submit(predict, row, i, datetime.datetime.now()): i for i, row in enumerate(rows)}
+        futures = {
+            executor.submit(predict, row, i, datetime.datetime.now()): i
+            for i, row in enumerate(rows)
+        }
 
         for future in as_completed(futures):
             index = futures[future]

@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import ttk, Canvas, Scrollbar, Scale
-from tkinter import filedialog, Toplevel
 from PIL import Image, ImageTk
 import numpy as np
 import cv2
