@@ -20,6 +20,7 @@ install OCR model
 git clone https://github.com/Green-Wood/CoMER.git
 cd CoMER
 pip install .
+cp -r ./comer $(dirname $(dirname $(which python)))/lib/python3.12/site-packages/ # assuming python 3.12
 ```
 
 update path to model in `env.base`
