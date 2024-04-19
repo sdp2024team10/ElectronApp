@@ -34,6 +34,7 @@ def predict(image: Image, index: int, start_time: datetime.datetime) -> dict:
 
 if __name__ == "__main__":
     image_path, preprocessing_calibration_str = sys.argv[1:]
+    assert os.path.isfile(image_path)
     preprocessing_calibration = json.loads(preprocessing_calibration_str)
     image = Image.open(image_path)
 
