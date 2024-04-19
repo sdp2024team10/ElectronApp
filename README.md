@@ -18,6 +18,8 @@ pip install -r ./requirements.txt
 install OCR model
 ```
 git clone https://github.com/Green-Wood/CoMER.git
+cd CoMER
+pip install .
 ```
 
 update path to model in `env.base`
