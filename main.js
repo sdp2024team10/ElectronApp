@@ -177,7 +177,7 @@ function handleTakePictureRequest(message, ws) {
 }
 
 function handleCalibrationRequest(message, ws) {
-    if (image_path == {}) {
+    if (image_path == "") {
         sendWebSockMessageToFrontend(JSON.stringify({ "type": "status", "data": "ERROR: you must take a picture before you can calibrate!" }), ws);
     } else {
         spawnAndHandleLines(
