@@ -52,7 +52,7 @@ function spawnAndHandleLines(binary, args, options, stdout_handler, stderr_handl
         stderr_handler(line);
     });
     thisProcess.on('close', (code) => {
-        console.log(`Process with PID ${thisProcess.pid} exited with code ${code}`);  // Log when the process exits and its exit code
+        console.log(`PID ${thisProcess.pid} exited with code ${code}`);  // Log when the process exits and its exit code
         exit_handler(code);
     });
 }
