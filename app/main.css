@@ -45,7 +45,7 @@ body {
   flex: 2;
 }
 
-button.blue-button {
+.blue-button {
   background-color: #007bff;
   color: white;
   border: none;
@@ -57,7 +57,7 @@ button.blue-button {
   margin: 2px;
 }
 
-button:hover {
+.blue-button:hover {
   background-color: #0056b3;
 }
 
