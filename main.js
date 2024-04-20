@@ -23,10 +23,22 @@ var activeWebsockConnections = new Set();
 
 var calibration = {};
 var image_path = "";
+var stepsCompleted = {
+  "take-picture": false,
+  calibration: false,
+  prediction: false,
+  verification: false,
+};
 
 function resetGlobals() {
   calibration = {};
   image_path = "";
+  stepsCompleted = {
+    "take-picture": false,
+    calibration: false,
+    prediction: false,
+    verification: false,
+  };
 }
 
 function log(...args) {
@@ -80,6 +92,7 @@ function spawnAndHandleLines(
 function handleExitCode(exit_code, pid, name, progressElementId) {
   log(`${name} (PID ${pid}) exited with code ${exit_code}`);
   if (exit_code == 0) {
+    stepsCompleted[name] = true;
     broadcastProgress(progressElementId, "completed");
   } else {
     broadcastProgress(progressElementId, "failed");
@@ -177,11 +190,12 @@ function handleTakePictureRequest() {
     JSON.stringify({ image_path: testImagePath })
   );
   broadcastProgress("take-picture-progress", "completed");
+  stepsCompleted["take-picture"] = true;
 }
 
 function handleCalibrationRequest() {
-  if (image_path == "") {
-    log("cannot calibrate, image path is an empty string!");
+  if (!stepsCompleted["take-picture"]) {
+    log("ERROR: you must take a picture before you can calibrate!");
     broadcastStatus("ERROR: you must take a picture before you can calibrate!");
     return;
   }
@@ -203,8 +217,9 @@ function handleCalibrationRequest() {
 }
 
 function handlePredictionRequest() {
-  if (calibration == {}) {
-    broadcastStatus("ERROR: you must calibrate before you can predict!");
+  if (!stepsCompleted["calibration"]) {
+    log("ERROR: you must calibrate before you can run prediction!");
+    broadcastStatus("ERROR: you must calibrate before you can run prediction!");
     return;
   }
   broadcastProgress("prediction-progress", "started");
