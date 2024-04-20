@@ -20,6 +20,7 @@ baud_rate = int(sys.argv[2])  # 115200
 
 print(f"connecting to port {port} with baud rate {baud_rate}")
 serial_conn = serial.Serial(port, baud_rate)
+print("connected.")
 serial_conn.setDTR(False)
 serial_conn.setRTS(False)
 
