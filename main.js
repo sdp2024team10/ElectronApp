@@ -1,248 +1,277 @@
 //const path = require('path');
-require('dotenv').config()
-require('dotenv').config({ path: '.env-base' })
-const { app, BrowserWindow } = require('electron')
-const WebSocket = require('ws')
-const fs = require('fs')
-const readline = require('readline');
-const { spawn } = require('child_process')
-const Ajv = require('ajv')
+require("dotenv").config();
+require("dotenv").config({ path: ".env-base" });
+const { app, BrowserWindow } = require("electron");
+const WebSocket = require("ws");
+const fs = require("fs");
+const readline = require("readline");
+const { spawn } = require("child_process");
+const Ajv = require("ajv");
 
 const WEBSOCK_PORT = process.env.PORT || 8080;
 
-const ajv = new Ajv()
-const verifResultsSchema = JSON.parse(fs.readFileSync("app/verif-results-schema.json"))
-const validateVerifResults = ajv.compile(verifResultsSchema)
+const ajv = new Ajv();
+const verifResultsSchema = JSON.parse(
+  fs.readFileSync("app/verif-results-schema.json")
+);
+const validateVerifResults = ajv.compile(verifResultsSchema);
 
-const wss = new WebSocket.Server({ port: WEBSOCK_PORT })
-console.log(`WebSocket server started on ws://localhost:${WEBSOCK_PORT}`)
+const wss = new WebSocket.Server({ port: WEBSOCK_PORT });
+console.log(`WebSocket server started on ws://localhost:${WEBSOCK_PORT}`);
 
-var activeWebsockConnections = new Set()
+var activeWebsockConnections = new Set();
 
-var calibration = {}
-var image_path = ""
+var calibration = {};
+var image_path = "";
 
 function createWindow() {
-    const win = new BrowserWindow({
-        width: 768,
-        height: 560,
-        webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false // Be cautious with this setting for security reasons
-        }
-    })
-    win.loadFile('app/index.html')
+  const win = new BrowserWindow({
+    width: 768,
+    height: 560,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false, // Be cautious with this setting for security reasons
+    },
+  });
+  win.loadFile("app/index.html");
 }
 
 function log(...args) {
-    const now = new Date();
-    console.log(now.toISOString(), ...args);
+  const now = new Date();
+  console.log(now.toISOString(), ...args);
 }
 
-function spawnAndHandleLines(binary, args, options, stdout_handler, stderr_handler, exit_handler, stdin_str="") {
-    log(`Starting binary ${binary} with args ${JSON.stringify(args)} and options ${JSON.stringify(options)}`);
-    if (stdin_str != "") {
-        log(`and stdin string "${stdin_str}"`)
-    }
-    const thisProcess = spawn(binary, args, options);
-    log(`Spawned process PID: ${thisProcess.pid}`);  // Log the PID of the subprocess
-    if (stdin_str != "") {
-        thisProcess.stdin.write(stdin_str);
-        thisProcess.stdin.end();  // Close the stdin after writing to signal no more input will be sent
-    }
-    const rlStdout = readline.createInterface({
-        input: thisProcess.stdout,
-        crlfDelay: Infinity
-    });
-    rlStdout.on('line', (line) => {
-        stdout_handler(line);
-    });
-    const rlStderr = readline.createInterface({
-        input: thisProcess.stderr,
-        crlfDelay: Infinity
-    });
-    rlStderr.on('line', (line) => {
-        stderr_handler(line);
-    });
-    thisProcess.on('close', (code) => {
-        console.log(`PID ${thisProcess.pid} exited with code ${code}`);  // Log when the process exits and its exit code
-        exit_handler(code, thisProcess.pid);
-    });
+function spawnAndHandleLines(
+  binary,
+  args,
+  options,
+  stdout_handler,
+  stderr_handler,
+  exit_handler,
+  stdin_str = ""
+) {
+  log(
+    `Starting binary ${binary} with args ${JSON.stringify(
+      args
+    )} and options ${JSON.stringify(options)}`
+  );
+  if (stdin_str != "") {
+    log(`and stdin string "${stdin_str}"`);
+  }
+  const thisProcess = spawn(binary, args, options);
+  log(`Spawned process PID: ${thisProcess.pid}`); // Log the PID of the subprocess
+  if (stdin_str != "") {
+    thisProcess.stdin.write(stdin_str);
+    thisProcess.stdin.end(); // Close the stdin after writing to signal no more input will be sent
+  }
+  const rlStdout = readline.createInterface({
+    input: thisProcess.stdout,
+    crlfDelay: Infinity,
+  });
+  rlStdout.on("line", (line) => {
+    stdout_handler(line);
+  });
+  const rlStderr = readline.createInterface({
+    input: thisProcess.stderr,
+    crlfDelay: Infinity,
+  });
+  rlStderr.on("line", (line) => {
+    stderr_handler(line);
+  });
+  thisProcess.on("close", (code) => {
+    console.log(`PID ${thisProcess.pid} exited with code ${code}`); // Log when the process exits and its exit code
+    exit_handler(code, thisProcess.pid);
+  });
 }
 
-function handleExitCode(exit_code, pid, name="unnamed process", do_broadcast_status=false) {
-    log(`${name} PID ${pid} exited with code ${exit_code}`)
-    if (do_broadcast_status){
-        if (exit_code == 0){
-            broadcastStatus(`${name} success`)
-        } else {
-            broadcastStatus(`ERROR: ${name} PID ${pid} failed!`)
-        }
+function handleExitCode(
+  exit_code,
+  pid,
+  name = "unnamed process",
+  do_broadcast_status = false
+) {
+  log(`${name} PID ${pid} exited with code ${exit_code}`);
+  if (do_broadcast_status) {
+    if (exit_code == 0) {
+      broadcastStatus(`${name} success`);
+    } else {
+      broadcastStatus(`ERROR: ${name} PID ${pid} failed!`);
     }
+  }
 }
 
 function broadcastWebSockMessage(message) {
-    activeWebsockConnections.forEach(function each(ws) {
-        if (ws.readyState === WebSocket.OPEN) {
-            ws.send(message); // Broadcast to all wss
-        }
-    });
+  activeWebsockConnections.forEach(function each(ws) {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(message); // Broadcast to all wss
+    }
+  });
 }
 
 function broadcastStatus(message) {
-    broadcastWebSockMessage(JSON.stringify({ "type": "status", "data": message }))
+  broadcastWebSockMessage(JSON.stringify({ type: "status", data: message }));
 }
 
-
 function handleImageFromSerialStdoutLine(imageFromSerialStdoutLine) {
-    try {
-        image_path = JSON.parse(imageFromSerialStdoutLine)["image_path"]
-        log(`image path received from image-from-serial.py: ${image_path}`)
-    } catch (error) {
-        log(`image-from-serial.py stdout: ${imageFromSerialStdoutLine}`)
-        return
-    }
+  try {
+    image_path = JSON.parse(imageFromSerialStdoutLine)["image_path"];
+    log(`image path received from image-from-serial.py: ${image_path}`);
+  } catch (error) {
+    log(`image-from-serial.py stdout: ${imageFromSerialStdoutLine}`);
+    return;
+  }
 }
 
 function handlePredictionStdoutLine(predictionStdoutLine) {
-    // TODO validate schema
-    log(`predict.py stdout: ${predictionStdoutLine}`)
-    broadcastWebSockMessage(predictionStdoutLine)
+  // TODO validate schema
+  log(`predict.py stdout: ${predictionStdoutLine}`);
+  broadcastWebSockMessage(predictionStdoutLine);
 }
 
 function handleCalibrateStdoutLine(calibrateStdoutLine) {
-    try {
-        calibration = JSON.parse(calibrateStdoutLine)["calibration"]
-        log("calibration received from calibrate.py")
-    } catch (error) {
-        log(`calibrate.py stdout: ${imageFromSerialStdoutLine}`)
-        return
-    }
+  try {
+    calibration = JSON.parse(calibrateStdoutLine)["calibration"];
+    log("calibration received from calibrate.py");
+  } catch (error) {
+    log(`calibrate.py stdout: ${imageFromSerialStdoutLine}`);
+    return;
+  }
 }
 
-function handleVerifStdoutLine(data){
-    log(`verification stdout: ${JSON.stringify(data)}`)
-    data_object = null
-    try{
-        data_object = JSON.parse(data)
-    } catch {
-        broadcastStatus("ERROR: verification returned malformed input!")
-        return
-    }
-    if (validateVerifResults(data_object)) {
-        broadcastWebSockMessage(JSON.stringify({ "type": "verif-output", "data": data }));
-    } else {
-        broadcastStatus("ERROR: validation failed!");
-    }
+function handleVerifStdoutLine(data) {
+  log(`verification stdout: ${JSON.stringify(data)}`);
+  data_object = null;
+  try {
+    data_object = JSON.parse(data);
+  } catch {
+    broadcastStatus("ERROR: verification returned malformed input!");
+    return;
+  }
+  if (validateVerifResults(data_object)) {
+    broadcastWebSockMessage(
+      JSON.stringify({ type: "verif-output", data: data })
+    );
+  } else {
+    broadcastStatus("ERROR: validation failed!");
+  }
 }
 
 function handleVerificationRequest(message) {
-    broadcastStatus("running verification...")
-    spawnAndHandleLines(
-        process.env.VERIF_PYTHON_PATH,
-        [process.env.VERIF_PATH, image_path],
-        { cwd: process.env.VERIF_CWD },
-        line => handleVerifStdoutLine(line),
-        line => log(`verification stderr : ${line}`),
-        (code, pid) => handleExitCode(code, pid, "verification", do_broadcast_status=true),
-        stdin_str=JSON.stringify(message)
-    );
+  broadcastStatus("running verification...");
+  spawnAndHandleLines(
+    process.env.VERIF_PYTHON_PATH,
+    [process.env.VERIF_PATH, image_path],
+    { cwd: process.env.VERIF_CWD },
+    (line) => handleVerifStdoutLine(line),
+    (line) => log(`verification stderr : ${line}`),
+    (code, pid) =>
+      handleExitCode(code, pid, "verification", (do_broadcast_status = true)),
+    (stdin_str = JSON.stringify(message))
+  );
 }
 
 function handlePredictionRequest() {
-    if (calibration == {}) {
-        broadcastStatus("ERROR: you must calibrate before you can predict!")
-    } else {
-        broadcastStatus("running prediction...")
-        spawnAndHandleLines(
-            process.env.PREDICT_PYTHON_PATH,
-            [process.env.PREDICT_PATH, image_path, JSON.stringify(calibration)],
-            { cwd: process.env.PREDICT_CWD },
-            line => handlePredictionStdoutLine(line),
-            line => log(`predict.py stderr : ${line}`),
-            (code, pid) => handleExitCode(code, pid, "prediction", do_broadcast_status=true)
-        );
-    }
+  if (calibration == {}) {
+    broadcastStatus("ERROR: you must calibrate before you can predict!");
+  } else {
+    broadcastStatus("running prediction...");
+    spawnAndHandleLines(
+      process.env.PREDICT_PYTHON_PATH,
+      [process.env.PREDICT_PATH, image_path, JSON.stringify(calibration)],
+      { cwd: process.env.PREDICT_CWD },
+      (line) => handlePredictionStdoutLine(line),
+      (line) => log(`predict.py stderr : ${line}`),
+      (code, pid) =>
+        handleExitCode(code, pid, "prediction", (do_broadcast_status = true))
+    );
+  }
 }
 
 function handleTakePictureRequest() {
-    broadcastStatus("taking picture...")
-    // spawnAndHandleLines(
-    //         process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
-    //         [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE],
-    //         {}, // Options
-    //         line => handleImageFromSerialStdoutLine(line),
-    //         line => log(`image-from-serial.py stderr : ${line}`),
-    //         (code, pid) => handleExitCode(code, pid, "take picture", do_broadcast_status=true)
-    //     );
-    const testImagePath = '../testimg.jpeg';
-    handleImageFromSerialStdoutLine(JSON.stringify({ "image_path": testImagePath }));
+  broadcastStatus("taking picture...");
+  // spawnAndHandleLines(
+  //         process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
+  //         [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE],
+  //         {}, // Options
+  //         line => handleImageFromSerialStdoutLine(line),
+  //         line => log(`image-from-serial.py stderr : ${line}`),
+  //         (code, pid) => handleExitCode(code, pid, "take picture", do_broadcast_status=true)
+  //     );
+  const testImagePath = "../testimg.jpeg";
+  handleImageFromSerialStdoutLine(
+    JSON.stringify({ image_path: testImagePath })
+  );
 }
 
 function handleCalibrationRequest() {
-    if (image_path == "") {
-        log("cannot calibrate, image path is an empty string!")
-        broadcastStatus("ERROR: you must take a picture before you can calibrate!")
-    } else {
-        broadcastStatus("running calibration...")
-        spawnAndHandleLines(
-            process.env.CALIBRATE_PYTHON_PATH,
-            [process.env.CALIBRATE_PATH, image_path],
-            { cwd: process.env.CALIBRATE_CWD },
-            line => handleCalibrateStdoutLine(line),
-            line => log(`calibrate.py stderr: ${line}`),
-            code => handleExitCode(code, "calibration", do_broadcast_status=true)
-        );
-    }
+  if (image_path == "") {
+    log("cannot calibrate, image path is an empty string!");
+    broadcastStatus("ERROR: you must take a picture before you can calibrate!");
+  } else {
+    broadcastStatus("running calibration...");
+    spawnAndHandleLines(
+      process.env.CALIBRATE_PYTHON_PATH,
+      [process.env.CALIBRATE_PATH, image_path],
+      { cwd: process.env.CALIBRATE_CWD },
+      (line) => handleCalibrateStdoutLine(line),
+      (line) => log(`calibrate.py stderr: ${line}`),
+      (code) =>
+        handleExitCode(code, "calibration", (do_broadcast_status = true))
+    );
+  }
 }
 
 function main() {
-    wss.on('connection', function connection(ws) {
-        activeWebsockConnections.add(ws)
-        ws.on('message', function incoming(message) {
-            log(message);
-            try{
-                const messageObject = JSON.parse(message);
-                try{
-                    type = messageObject.type
-                } catch {
-                    log(`received json websock message with to "type" attribute: ${message}`)
-                    return
-                }
-                switch (type) {
-                    case 'run-verif':
-                        handleVerificationRequest(messageObject.data);
-                        break;
-                    case 'run-prediction':
-                        handlePredictionRequest();
-                        break;
-                    case 'take-picture':
-                        handleTakePictureRequest();
-                        break;
-                    case 'calibrate':
-                        handleCalibrationRequest();
-                        break;
-                    default:
-                        log(`received json websock message unknown "type" attribute: ${message}`)
-                }
-            } catch (e) {
-                if (e instanceof SyntaxError){
-                    log(`received non-json websock message: ${message}`)
-                    return
-                } else {
-                    throw e
-                }
-            }
-        })
-        ws.on('close', () => {
-            activeWebsockConnections.delete(ws)
-        })
-    })
-    createWindow()
+  wss.on("connection", function connection(ws) {
+    activeWebsockConnections.add(ws);
+    ws.on("message", function incoming(message) {
+      log(message);
+      try {
+        const messageObject = JSON.parse(message);
+        try {
+          type = messageObject.type;
+        } catch {
+          log(
+            `received json websock message with to "type" attribute: ${message}`
+          );
+          return;
+        }
+        switch (type) {
+          case "run-verif":
+            handleVerificationRequest(messageObject.data);
+            break;
+          case "run-prediction":
+            handlePredictionRequest();
+            break;
+          case "take-picture":
+            handleTakePictureRequest();
+            break;
+          case "calibrate":
+            handleCalibrationRequest();
+            break;
+          default:
+            log(
+              `received json websock message unknown "type" attribute: ${message}`
+            );
+        }
+      } catch (e) {
+        if (e instanceof SyntaxError) {
+          log(`received non-json websock message: ${message}`);
+          return;
+        } else {
+          throw e;
+        }
+      }
+    });
+    ws.on("close", () => {
+      activeWebsockConnections.delete(ws);
+    });
+  });
+  createWindow();
 }
 
-app.whenReady().then(main)
+app.whenReady().then(main);
 
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') app.quit()
-})
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
+});
