@@ -247,9 +247,18 @@ function updateProgress(elementId, newProgress) {
 }
 
 function main() {
+  console.log("hello, world!");
   var port = process.env.PORT || 8080;
   var ws = new WebSocket(`ws://localhost:${port}`);
-  console.log("hello, world!");
+  ws.onopen = function () {
+    ws.send(JSON.stringify({ type: "reload" }));
+  };
+  ws.onerror = function (error) {
+    console.log("websocket error: " + error);
+  };
+  ws.onclose = function () {
+    console.log("websocket is closed...");
+  };
   ws.onmessage = function (event) {
     console.log(event.data);
     var message = JSON.parse(event.data);

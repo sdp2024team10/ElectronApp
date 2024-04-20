@@ -24,6 +24,11 @@ var activeWebsockConnections = new Set();
 var calibration = {};
 var image_path = "";
 
+function resetGlobals() {
+  calibration = {};
+  image_path = "";
+}
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 768,
@@ -277,6 +282,9 @@ function main() {
             break;
           case "calibrate":
             handleCalibrationRequest();
+            break;
+          case "reload":
+            resetGlobals();
             break;
           default:
             log(
