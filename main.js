@@ -5,7 +5,6 @@ const { app, BrowserWindow } = require('electron')
 const WebSocket = require('ws')
 const fs = require('fs')
 const readline = require('readline');
-const { exec } = require('child_process')
 const { spawn } = require('child_process')
 const Ajv = require('ajv')
 
