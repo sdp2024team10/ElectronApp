@@ -130,12 +130,6 @@ function handleImageFromSerialStdoutLine(imageFromSerialStdoutLine) {
   }
 }
 
-function handlePredictionStdoutLine(predictionStdoutLine) {
-  // TODO validate schema
-  log(`predict.py stdout: ${predictionStdoutLine}`);
-  broadcastWebSockMessage(predictionStdoutLine);
-}
-
 function handleCalibrateStdoutLine(calibrateStdoutLine) {
   try {
     calibration = JSON.parse(calibrateStdoutLine)["calibration"];
@@ -144,6 +138,12 @@ function handleCalibrateStdoutLine(calibrateStdoutLine) {
     log(`calibrate.py stdout: ${imageFromSerialStdoutLine}`);
     return;
   }
+}
+
+function handlePredictionStdoutLine(predictionStdoutLine) {
+  // TODO validate schema
+  log(`predict.py stdout: ${predictionStdoutLine}`);
+  broadcastWebSockMessage(predictionStdoutLine);
 }
 
 function handleVerifStdoutLine(data) {
@@ -162,47 +162,6 @@ function handleVerifStdoutLine(data) {
   } else {
     broadcastStatus("ERROR: validation failed!");
   }
-}
-
-function handleVerificationRequest(message) {
-  broadcastProgress("verficiation-progress", "started");
-  spawnAndHandleLines(
-    process.env.VERIF_PYTHON_PATH,
-    [process.env.VERIF_PATH],
-    { cwd: process.env.VERIF_CWD },
-    (line) => handleVerifStdoutLine(line),
-    (line) => log(`verification stderr : ${line}`),
-    (code, pid) =>
-      handleExitCode(
-        code,
-        pid,
-        "verification",
-        (progressElementId = "verification-progress")
-      ),
-    (stdin_str = JSON.stringify(message))
-  );
-}
-
-function handlePredictionRequest() {
-  if (calibration == {}) {
-    broadcastStatus("ERROR: you must calibrate before you can predict!");
-    return;
-  }
-  broadcastProgress("prediction-progress", "started");
-  spawnAndHandleLines(
-    process.env.PREDICT_PYTHON_PATH,
-    [process.env.PREDICT_PATH, image_path, JSON.stringify(calibration)],
-    { cwd: process.env.PREDICT_CWD },
-    (line) => handlePredictionStdoutLine(line),
-    (line) => log(`predict.py stderr : ${line}`),
-    (code, pid) =>
-      handleExitCode(
-        code,
-        pid,
-        "prediction",
-        (progressElementId = "prediction-progress")
-      )
-  );
 }
 
 function handleTakePictureRequest() {
@@ -252,6 +211,47 @@ function handleCalibrationRequest() {
         "calibration",
         (progressElementId = "calibration-progress")
       )
+  );
+}
+
+function handlePredictionRequest() {
+  if (calibration == {}) {
+    broadcastStatus("ERROR: you must calibrate before you can predict!");
+    return;
+  }
+  broadcastProgress("prediction-progress", "started");
+  spawnAndHandleLines(
+    process.env.PREDICT_PYTHON_PATH,
+    [process.env.PREDICT_PATH, image_path, JSON.stringify(calibration)],
+    { cwd: process.env.PREDICT_CWD },
+    (line) => handlePredictionStdoutLine(line),
+    (line) => log(`predict.py stderr : ${line}`),
+    (code, pid) =>
+      handleExitCode(
+        code,
+        pid,
+        "prediction",
+        (progressElementId = "prediction-progress")
+      )
+  );
+}
+
+function handleVerificationRequest(message) {
+  broadcastProgress("verficiation-progress", "started");
+  spawnAndHandleLines(
+    process.env.VERIF_PYTHON_PATH,
+    [process.env.VERIF_PATH],
+    { cwd: process.env.VERIF_CWD },
+    (line) => handleVerifStdoutLine(line),
+    (line) => log(`verification stderr : ${line}`),
+    (code, pid) =>
+      handleExitCode(
+        code,
+        pid,
+        "verification",
+        (progressElementId = "verification-progress")
+      ),
+    (stdin_str = JSON.stringify(message))
   );
 }
 
