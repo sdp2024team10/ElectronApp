@@ -14,7 +14,7 @@ requires HTML elements with the following IDs:
 */
 
 const NUM_EXPRESSIONS = 10
-require("../src/jquery1.7.2.min.js")
+require("../app/jquery1.7.2.min.js")
 require("../node_modules/mathquill/build/mathquill.js")
 require('dotenv').config({ path: '.env-base' })
 const Chart = require('chart.js/auto');

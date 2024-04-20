@@ -11,7 +11,7 @@ const Ajv = require('ajv')
 const WEBSOCK_PORT = process.env.PORT || 8080;
 
 const ajv = new Ajv()
-const verifResultsSchema = JSON.parse(fs.readFileSync("src/verif-results-schema.json"))
+const verifResultsSchema = JSON.parse(fs.readFileSync("app/verif-results-schema.json"))
 const validateVerifResults = ajv.compile(verifResultsSchema)
 
 const wss = new WebSocket.Server({ port: WEBSOCK_PORT })
@@ -31,7 +31,7 @@ function createWindow() {
             contextIsolation: false // Be cautious with this setting for security reasons
         }
     })
-    win.loadFile('src/index.html')
+    win.loadFile('app/index.html')
 }
 
 function log(...args) {
@@ -167,16 +167,16 @@ function handlePredictionRequest() {
 
 function handleTakePictureRequest() {
     broadcastStatus("taking picture...")
-    spawnAndHandleLines(
-            process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
-            [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE],
-            {}, // Options
-            line => handleImageFromSerialStdoutLine(line),
-            line => log(`image-from-serial.py stderr : ${line}`),
-            (code, pid) => handleExitCode(code, pid, "take picture", do_broadcast_status=true)
-        );
-    // const testImagePath = '../testimg.jpeg';
-    // handleImageFromSerialStdoutLine(JSON.stringify({ "image_path": testImagePath }));
+    // spawnAndHandleLines(
+    //         process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
+    //         [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE],
+    //         {}, // Options
+    //         line => handleImageFromSerialStdoutLine(line),
+    //         line => log(`image-from-serial.py stderr : ${line}`),
+    //         (code, pid) => handleExitCode(code, pid, "take picture", do_broadcast_status=true)
+    //     );
+    const testImagePath = '../testimg.jpeg';
+    handleImageFromSerialStdoutLine(JSON.stringify({ "image_path": testImagePath }));
 }
 
 function handleCalibrationRequest() {
