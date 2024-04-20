@@ -64,10 +64,10 @@ function spawnAndHandleLines(
     log(`and stdin string "${stdin_str}"`);
   }
   const thisProcess = spawn(binary, args, options);
-  log(`Spawned process PID: ${thisProcess.pid}`); // Log the PID of the subprocess
+  log(`Spawned process PID: ${thisProcess.pid}`);
   if (stdin_str != "") {
     thisProcess.stdin.write(stdin_str);
-    thisProcess.stdin.end(); // Close the stdin after writing to signal no more input will be sent
+    thisProcess.stdin.end();
   }
   const rlStdout = readline.createInterface({
     input: thisProcess.stdout,
@@ -84,7 +84,7 @@ function spawnAndHandleLines(
     stderr_handler(line);
   });
   thisProcess.on("close", (code) => {
-    console.log(`PID ${thisProcess.pid} exited with code ${code}`); // Log when the process exits and its exit code
+    console.log(`PID ${thisProcess.pid} exited with code ${code}`);
     exit_handler(code, thisProcess.pid);
   });
 }
