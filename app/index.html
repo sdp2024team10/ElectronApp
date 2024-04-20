@@ -1,48 +1,73 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <link rel="stylesheet" type="text/css" href="../app/main.css">
-  <link rel="stylesheet" type="text/css" href="../app/latex-editor.css">
-  <link rel="stylesheet" type="text/css" href="../node_modules/mathquill/build/mathquill.css">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-</head>
-<body>
-  <div id="header">Algebraic Debugger</div>
-  <p id="instructions">Below modify the graph settings along with any equation errors</p>
+  <head>
+    <link rel="stylesheet" type="text/css" href="../app/main.css" />
+    <link rel="stylesheet" type="text/css" href="../app/latex-editor.css" />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="../node_modules/mathquill/build/mathquill.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="header">Algebraic Debugger</div>
+    <p id="instructions">
+      Below modify the graph settings along with any equation errors
+    </p>
 
-  <div class="container">
-    <div class="controls">
-      <div id="verif-parameters">
-        <div id="unknown-variable">
-          <label>Unknown Variable Name: <input type="text" id="variable-name" value="x"></label><br>
-          <label>Sample Start: <input type="number" id="sample-start" value="0"></label><br>
-          <label>Sample End: <input type="number" id="sample-end" value="10"></label><br>
-          <label>Number of Samples: <input type="number" id="num-samples" value="10"></label><br>
-          <label>Sample Spacing:
-            <select id="sample-spacing">
-              <option value="">Select...</option>
-              <option value="log">Logarithmic</option>
-              <option value="linear" selected>Linear</option>
-            </select>
-          </label>
+    <div class="container">
+      <div class="controls">
+        <div id="verif-parameters">
+          <div id="unknown-variable">
+            <label
+              >Unknown Variable Name:
+              <input type="text" id="variable-name" value="x" /></label
+            ><br />
+            <label
+              >Sample Start:
+              <input type="number" id="sample-start" value="0" /></label
+            ><br />
+            <label
+              >Sample End:
+              <input type="number" id="sample-end" value="10" /></label
+            ><br />
+            <label
+              >Number of Samples:
+              <input type="number" id="num-samples" value="10" /></label
+            ><br />
+            <label
+              >Sample Spacing:
+              <select id="sample-spacing">
+                <option value="">Select...</option>
+                <option value="log">Logarithmic</option>
+                <option value="linear" selected>Linear</option>
+              </select>
+            </label>
+          </div>
+          <div>
+            <label
+              >Min Difference Detect Error:
+              <input type="number" id="min-difference-detect-error" value="0.1"
+            /></label>
+          </div>
         </div>
-        <div>
-          <label>Min Difference Detect Error: <input type="number" id="min-difference-detect-error" value="0.1"></label>
-        </div>
+        <table id="expressions-table"></table>
+        <button id="run-verif-button">Run Verification</button>
+        <button id="run-pred-button">Run Prediction</button>
+        <button id="calibrate-button">Calibrate</button>
+        <button id="take-picture-button">Take Picture</button>
+        <button id="clear-expressions-button">Clear Expressions</button>
       </div>
-      <table id="expressions-table"></table>
-      <button id="run-verif-button">Run Verification</button>
-      <button id="run-pred-button">Run Prediction</button>
-      <button id="calibrate-button">Calibrate</button>
-      <button id="take-picture-button">Take Picture</button>
-      <button id="clear-expressions-button">Clear Expressions</button>
+      <div class="graph">
+        <canvas id="chart"></canvas>
+      </div>
     </div>
-    <div class="graph">
-      <canvas id="chart"></canvas>
-    </div>
-  </div>
-  <div id="status"><span id="status-text"></span></div>
-  <div id="math-explanation"></div>
-  <script type="text/javascript" src="../app/script.js"></script>
-</body>
+    <div id="status"><span id="status-text"></span></div>
+    <div id="math-explanation"></div>
+    <script type="text/javascript" src="../app/script.js"></script>
+  </body>
 </html>
