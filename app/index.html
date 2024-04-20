@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="UTF-8" />
     <link rel="stylesheet" type="text/css" href="../app/main.css" />
     <link rel="stylesheet" type="text/css" href="../app/latex-editor.css" />
     <link
@@ -56,11 +57,29 @@
           </div>
         </div>
         <table id="expressions-table"></table>
-        <button id="run-verif-button">Run Verification</button>
-        <button id="run-pred-button">Run Prediction</button>
-        <button id="calibrate-button">Calibrate</button>
-        <button id="take-picture-button">Take Picture</button>
         <button id="clear-expressions-button">Clear Expressions</button>
+        <div id="take-picture" class="button-and-progress">
+          <button id="take-picture-button" class="blue-button">
+            Take Picture
+          </button>
+          <div id="take-picture-progress" class="progress"></div>
+        </div>
+        <div id="calibration" class="button-and-progress">
+          <button id="calibrate-button" class="blue-button">Calibrate</button>
+          <div id="calibration-progress" class="progress"></div>
+        </div>
+        <div id="prediction" class="button-and-progress">
+          <button id="run-pred-button" class="blue-button">
+            Run Prediction
+          </button>
+          <div id="prediction-progress" class="progress"></div>
+        </div>
+        <div id="verification" class="button-and-progress">
+          <button id="run-verif-button" class="blue-button">
+            Run Verficiation
+          </button>
+          <div id="verification-progress" class="progress"></div>
+        </div>
       </div>
       <div class="graph">
         <canvas id="chart"></canvas>

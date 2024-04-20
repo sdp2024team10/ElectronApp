@@ -207,6 +207,45 @@ function clearExpressions() {
   console.log("All expressions cleared.");
 }
 
+function updateProgress(elementId, newProgress) {
+  const progressElement = document.getElementById(elementId);
+  if (progressElement.classList[0] != "progress") {
+    console.log(
+      "attempted to update progress on an element that is not of the progress class!"
+    );
+    console.log(`elementId: "${elementId}", newProgress: "${newProgress}"`);
+    console.log(`${elementId}'s classList: ${progressElement.classList}`);
+    return;
+  }
+  progressElement.className = "progress"; // remove all elements from class list
+  switch (newProgress) {
+    case "not started":
+      progressElement.classList.add("not-started");
+      progressElement.textContent = "";
+      currentState = 0;
+      return;
+    case "started":
+      progressElement.classList.add("started");
+      progressElement.innerHTML = '<img src="res/loading.gif">';
+      currentState = 1;
+      return;
+    case "completed":
+      progressElement.classList.add("completed");
+      progressElement.innerHTML = '<img src="res/green-check-mark.png">';
+      currentState = 2;
+      return;
+    case "failed":
+      progressElement.classList.add("failed");
+      progressElement.innerHTML = '<img src="res/red-x.png">';
+      currentState = 2;
+      return;
+    default:
+      console.log("attempted to update progress with invalid new progress!");
+      console.log(elementId);
+      console.log(newProgress);
+  }
+}
+
 function main() {
   var port = process.env.PORT || 8080;
   var ws = new WebSocket(`ws://localhost:${port}`);
@@ -217,6 +256,9 @@ function main() {
     switch (message.type) {
       case "status":
         updateStatusElement(message.data);
+        break;
+      case "progress":
+        updateProgress(message["elementId"], message["newProgress"]);
         break;
       case "verif-output":
         var messageData = JSON.parse(message.data); // unclear why I need to parse twice

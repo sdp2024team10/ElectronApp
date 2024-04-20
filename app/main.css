@@ -45,7 +45,7 @@ body {
   flex: 2;
 }
 
-button {
+button.blue-button {
   background-color: #007bff;
   color: white;
   border: none;
@@ -93,4 +93,28 @@ button:hover {
 .error-message {
   color: red;
   font-weight: bold;
+}
+
+.progress {
+  height: 20px;
+  width: 20px;
+}
+
+.progress img {
+  max-width: 100%;
+  max-height: 100%;
+  display: block; /* removes any extra space below the image */
+}
+
+.button-and-progress {
+  flex: 1 1 50%; /* Control the number of items per row */
+  box-sizing: border-box;
+  display: flex; /* Enables flex properties within each item */
+  align-items: center; /* Center items vertically within the container */
+  justify-content: center; /* Center items horizontally within the container */
+}
+.button-and-progress * {
+  max-width: 100%; /* Ensures image does not overflow its container */
+  max-height: 100%; /* Keeps the image within the item's boundaries */
+  height: auto; /* Maintains aspect ratio */
 }

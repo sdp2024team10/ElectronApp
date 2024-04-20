@@ -84,32 +84,35 @@ function spawnAndHandleLines(
   });
 }
 
-function handleExitCode(
-  exit_code,
-  pid,
-  name = "unnamed process",
-  do_broadcast_status = false
-) {
-  log(`${name} PID ${pid} exited with code ${exit_code}`);
-  if (do_broadcast_status) {
-    if (exit_code == 0) {
-      broadcastStatus(`${name} success`);
-    } else {
-      broadcastStatus(`ERROR: ${name} PID ${pid} failed!`);
-    }
+function handleExitCode(exit_code, pid, name, progressElementId) {
+  log(`${name} (PID ${pid}) exited with code ${exit_code}`);
+  if (exit_code == 0) {
+    broadcastProgress(progressElementId, "completed");
+  } else {
+    broadcastProgress(progressElementId, "failed");
   }
 }
 
 function broadcastWebSockMessage(message) {
   activeWebsockConnections.forEach(function each(ws) {
     if (ws.readyState === WebSocket.OPEN) {
-      ws.send(message); // Broadcast to all wss
+      ws.send(message);
     }
   });
 }
 
 function broadcastStatus(message) {
   broadcastWebSockMessage(JSON.stringify({ type: "status", data: message }));
+}
+
+function broadcastProgress(elementId, newProgress) {
+  broadcastWebSockMessage(
+    JSON.stringify({
+      type: "progress",
+      elementId: elementId,
+      newProgress: newProgress,
+    })
+  );
 }
 
 function handleImageFromSerialStdoutLine(imageFromSerialStdoutLine) {
@@ -157,7 +160,7 @@ function handleVerifStdoutLine(data) {
 }
 
 function handleVerificationRequest(message) {
-  broadcastStatus("running verification...");
+  broadcastProgress("verficiation-progress", "started");
   spawnAndHandleLines(
     process.env.VERIF_PYTHON_PATH,
     [process.env.VERIF_PATH, image_path],
@@ -165,7 +168,12 @@ function handleVerificationRequest(message) {
     (line) => handleVerifStdoutLine(line),
     (line) => log(`verification stderr : ${line}`),
     (code, pid) =>
-      handleExitCode(code, pid, "verification", (do_broadcast_status = true)),
+      handleExitCode(
+        code,
+        pid,
+        "verification",
+        (progressElementId = "verification-progress")
+      ),
     (stdin_str = JSON.stringify(message))
   );
 }
@@ -174,7 +182,7 @@ function handlePredictionRequest() {
   if (calibration == {}) {
     broadcastStatus("ERROR: you must calibrate before you can predict!");
   } else {
-    broadcastStatus("running prediction...");
+    broadcastProgress("prediction-progress", "started");
     spawnAndHandleLines(
       process.env.PREDICT_PYTHON_PATH,
       [process.env.PREDICT_PATH, image_path, JSON.stringify(calibration)],
@@ -182,25 +190,41 @@ function handlePredictionRequest() {
       (line) => handlePredictionStdoutLine(line),
       (line) => log(`predict.py stderr : ${line}`),
       (code, pid) =>
-        handleExitCode(code, pid, "prediction", (do_broadcast_status = true))
+        handleExitCode(
+          code,
+          pid,
+          "prediction",
+          (progressElementId = "prediction-progress")
+        )
     );
   }
 }
 
 function handleTakePictureRequest() {
-  broadcastStatus("taking picture...");
+  broadcastProgress("take-picture-progress", "started");
   // spawnAndHandleLines(
-  //         process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
-  //         [process.env.IMAGE_FROM_SERIAL_PATH, process.env.COM_PORT, process.env.BAUD_RATE],
-  //         {}, // Options
-  //         line => handleImageFromSerialStdoutLine(line),
-  //         line => log(`image-from-serial.py stderr : ${line}`),
-  //         (code, pid) => handleExitCode(code, pid, "take picture", do_broadcast_status=true)
-  //     );
+  //   process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
+  //   [
+  //     process.env.IMAGE_FROM_SERIAL_PATH,
+  //     process.env.COM_PORT,
+  //     process.env.BAUD_RATE,
+  //   ],
+  //   {}, // Options
+  //   (line) => handleImageFromSerialStdoutLine(line),
+  //   (line) => log(`image-from-serial.py stderr : ${line}`),
+  //   (code, pid) =>
+  //     handleExitCode(
+  //       code,
+  //       pid,
+  //       "take-picture",
+  //       (progressElementId = "take-picture-progress")
+  //     )
+  // );
   const testImagePath = "../testimg.jpeg";
   handleImageFromSerialStdoutLine(
     JSON.stringify({ image_path: testImagePath })
   );
+  broadcastProgress("take-picture-progress", "completed");
 }
 
 function handleCalibrationRequest() {
@@ -208,15 +232,20 @@ function handleCalibrationRequest() {
     log("cannot calibrate, image path is an empty string!");
     broadcastStatus("ERROR: you must take a picture before you can calibrate!");
   } else {
-    broadcastStatus("running calibration...");
+    broadcastProgress("calibration-progress", "started");
     spawnAndHandleLines(
       process.env.CALIBRATE_PYTHON_PATH,
       [process.env.CALIBRATE_PATH, image_path],
       { cwd: process.env.CALIBRATE_CWD },
       (line) => handleCalibrateStdoutLine(line),
       (line) => log(`calibrate.py stderr: ${line}`),
-      (code) =>
-        handleExitCode(code, "calibration", (do_broadcast_status = true))
+      (code, pid) =>
+        handleExitCode(
+          code,
+          pid,
+          "calibration",
+          (progressElementId = "calibration-progress")
+        )
     );
   }
 }
