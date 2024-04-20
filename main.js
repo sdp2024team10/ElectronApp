@@ -168,7 +168,7 @@ function handleVerificationRequest(message) {
   broadcastProgress("verficiation-progress", "started");
   spawnAndHandleLines(
     process.env.VERIF_PYTHON_PATH,
-    [process.env.VERIF_PATH, image_path],
+    [process.env.VERIF_PATH],
     { cwd: process.env.VERIF_CWD },
     (line) => handleVerifStdoutLine(line),
     (line) => log(`verification stderr : ${line}`),
@@ -186,23 +186,23 @@ function handleVerificationRequest(message) {
 function handlePredictionRequest() {
   if (calibration == {}) {
     broadcastStatus("ERROR: you must calibrate before you can predict!");
-  } else {
-    broadcastProgress("prediction-progress", "started");
-    spawnAndHandleLines(
-      process.env.PREDICT_PYTHON_PATH,
-      [process.env.PREDICT_PATH, image_path, JSON.stringify(calibration)],
-      { cwd: process.env.PREDICT_CWD },
-      (line) => handlePredictionStdoutLine(line),
-      (line) => log(`predict.py stderr : ${line}`),
-      (code, pid) =>
-        handleExitCode(
-          code,
-          pid,
-          "prediction",
-          (progressElementId = "prediction-progress")
-        )
-    );
+    return;
   }
+  broadcastProgress("prediction-progress", "started");
+  spawnAndHandleLines(
+    process.env.PREDICT_PYTHON_PATH,
+    [process.env.PREDICT_PATH, image_path, JSON.stringify(calibration)],
+    { cwd: process.env.PREDICT_CWD },
+    (line) => handlePredictionStdoutLine(line),
+    (line) => log(`predict.py stderr : ${line}`),
+    (code, pid) =>
+      handleExitCode(
+        code,
+        pid,
+        "prediction",
+        (progressElementId = "prediction-progress")
+      )
+  );
 }
 
 function handleTakePictureRequest() {
@@ -236,23 +236,23 @@ function handleCalibrationRequest() {
   if (image_path == "") {
     log("cannot calibrate, image path is an empty string!");
     broadcastStatus("ERROR: you must take a picture before you can calibrate!");
-  } else {
-    broadcastProgress("calibration-progress", "started");
-    spawnAndHandleLines(
-      process.env.CALIBRATE_PYTHON_PATH,
-      [process.env.CALIBRATE_PATH, image_path],
-      { cwd: process.env.CALIBRATE_CWD },
-      (line) => handleCalibrateStdoutLine(line),
-      (line) => log(`calibrate.py stderr: ${line}`),
-      (code, pid) =>
-        handleExitCode(
-          code,
-          pid,
-          "calibration",
-          (progressElementId = "calibration-progress")
-        )
-    );
+    return;
   }
+  broadcastProgress("calibration-progress", "started");
+  spawnAndHandleLines(
+    process.env.CALIBRATE_PYTHON_PATH,
+    [process.env.CALIBRATE_PATH, image_path],
+    { cwd: process.env.CALIBRATE_CWD },
+    (line) => handleCalibrateStdoutLine(line),
+    (line) => log(`calibrate.py stderr: ${line}`),
+    (code, pid) =>
+      handleExitCode(
+        code,
+        pid,
+        "calibration",
+        (progressElementId = "calibration-progress")
+      )
+  );
 }
 
 function main() {
