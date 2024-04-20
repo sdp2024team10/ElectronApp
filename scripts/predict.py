@@ -22,7 +22,7 @@ model = model.to(device)
 
 def predict(image: Image, index: int, start_time: datetime.datetime) -> dict:
     desired_size = (249, 144)
-    image = ImageOps.fit(image, desired_size, Image.ANTIALIAS)
+    image = ImageOps.fit(image, desired_size, Image.LANCZOS)
 
     img_tensor = ToTensor()(image)
     mask = torch.zeros_like(img_tensor, dtype=torch.bool)
