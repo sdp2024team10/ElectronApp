@@ -29,18 +29,6 @@ function resetGlobals() {
   image_path = "";
 }
 
-function createWindow() {
-  const win = new BrowserWindow({
-    width: 768,
-    height: 560,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false, // Be cautious with this setting for security reasons
-    },
-  });
-  win.loadFile("app/index.html");
-}
-
 function log(...args) {
   const now = new Date();
   console.log(now.toISOString(), ...args);
@@ -253,6 +241,18 @@ function handleVerificationRequest(message) {
       ),
     (stdin_str = JSON.stringify(message))
   );
+}
+
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 768,
+    height: 560,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false, // Be cautious with this setting for security reasons
+    },
+  });
+  win.loadFile("app/index.html");
 }
 
 function main() {
