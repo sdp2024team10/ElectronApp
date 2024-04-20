@@ -50,7 +50,20 @@ for latex_expr in latex_expressions_not_blank:
     graphs.append(func(samples))
 
 for i in range(1, len(graphs)):
-    prev_graph_diff = sum(abs(graphs[i] - graphs[i - 1]))
+    try:
+        prev_graph_diff = float(np.sum(np.abs(graphs[i] - graphs[i - 1])))
+    except TypeError as e:
+        print(
+            "\n".join(
+                [
+                    "your expression cannot be evaluated.",
+                    "this can be because your expression has multiple unknown variables,",
+                    "or your expression has constants such as pi.",
+                ]
+            ),
+            file=sys.stderr,
+        )
+        sys.exit(1)
     if prev_graph_diff > _input["min_difference_detect_error"]:
         equation1 = latex_expressions_not_blank[i - 1]
         equation2 = latex_expressions_not_blank[i]
