@@ -16,6 +16,8 @@ _input = json.load(sys.stdin)
 
 jsonschema.validate(instance=_input, schema=input_schema)
 
+PI_STR = "3.141596"
+
 assert len(_input["unknown_variables"]) == 1, "exactly 1 unknown variable"
 unknown_var = _input["unknown_variables"][0]
 if unknown_var["sample_spacing"] == "linear":
@@ -40,6 +42,7 @@ pad_index = 0
 for i, expr in enumerate(_input["expressions"]):
     if expr.strip() == "":
         continue
+    expr = expr.replace(r"\pi", PI_STR)
     latex_expressions_not_blank.append(expr)
     not_blank_index_2_original_index[len(latex_expressions_not_blank) - 1] = i
 
