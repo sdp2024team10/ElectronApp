@@ -1,17 +1,15 @@
-# from PIL import Image, ImageFilter
-from PIL.Image import Image as PILImage
-from PIL import Image as PILImageModule
+from PIL import Image, ImageFilter
 import numpy as np
 from typing import List
 import sys
 import cv2
 
 
-def convert_black_white(image: PILImage, threshold=150) -> PILImage:
+def convert_black_white(image: Image, threshold=150):
     return image.convert("L").point(lambda x: 255 if x < threshold else 0, "1")
 
 
-def split_rows(image: PILImage, num_segments: int) -> List[PILImage]:
+def split_rows(image: Image, num_segments: int) -> List[Image]:
     output = []
     width, height = image.size
     segment_height = int(height / num_segments)
@@ -19,29 +17,23 @@ def split_rows(image: PILImage, num_segments: int) -> List[PILImage]:
         top = i * segment_height
         bottom = (
             (i + 1) * segment_height if i < num_segments - 1 else height
-        )  # Ensure the last segment goes to the edge
+        )  # Ensure last segment goes to the edge
         output.append(image.crop((0, top, width, bottom)))
     return output
 
 
-def strip_black_edges(image: PILImage, padding=10) -> PILImage:
-    bw_array = np.array(image.convert("L"))
-    if np.all(bw_array == 255):  # Changed to 255 to denote white in a binary image
+def strip_black_edges(image: Image, padding=10) -> Image:
+    bw_array = np.array(image)
+    if np.all(bw_array == False):
         print(
-            "Warning: attempted to strip black edges from entirely white image!",
+            "warning: attempted to strip black edges from entirely black image!",
             file=sys.stderr,
         )
         return image
 
     def find_non_white_edges(arr):
-        rows = np.where(np.any(arr == 0, axis=1))[
-            0
-        ]  # Changed to find non-white (black) rows
-        cols = np.where(np.any(arr == 0, axis=0))[
-            0
-        ]  # Changed to find non-white (black) cols
-        if len(rows) == 0 or len(cols) == 0:  # Added check to prevent index errors
-            return 0, arr.shape[0] - 1, 0, arr.shape[1] - 1
+        rows = np.where(~np.all(arr == False, axis=1))[0]
+        cols = np.where(~np.all(arr == False, axis=0))[0]
         return rows[0], rows[-1], cols[0], cols[-1]
 
     first_row, last_row, first_col, last_col = find_non_white_edges(bw_array)
@@ -51,32 +43,35 @@ def strip_black_edges(image: PILImage, padding=10) -> PILImage:
     last_col = min(bw_array.shape[1], last_col + padding)
 
     stripped_arr = bw_array[first_row : last_row + 1, first_col : last_col + 1]
-    return PILImageModule.fromarray(stripped_arr).convert(
-        "1"
-    )  # Convert back to binary mode
+    return Image.fromarray(stripped_arr)
 
 
-def trim(image: PILImage, trim_sizes_px: dict) -> PILImage:
+def trim(image: Image, trim_sizes_px: dict) -> Image:
     width, height = image.size
-    left = trim_sizes_px.get("left", 0)
-    upper = trim_sizes_px.get("top", 0)
-    right = width - trim_sizes_px.get("right", 0)
-    lower = height - trim_sizes_px.get("bottom", 0)
+    left = trim_sizes_px["left"]
+    upper = trim_sizes_px["top"]
+    right = width - trim_sizes_px["right"]
+    lower = height - trim_sizes_px["bottom"]
+    # clamp image size bounds
+    left = max(left, 0)
+    upper = max(upper, 0)
+    right = min(right, width)
+    lower = min(lower, height)
     return image.crop((left, upper, right, lower))
 
 
-def crop(image: PILImage, crop_coords) -> PILImage:
+def crop(image: Image, crop_coords) -> Image:
     cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
     pts1 = np.float32(crop_coords)
     width, height = cv_image.shape[1], cv_image.shape[0]
     pts2 = np.float32([[0, 0], [width, 0], [width, height], [0, height]])
     matrix = cv2.getPerspectiveTransform(pts1, pts2)
     result = cv2.warpPerspective(cv_image, matrix, (width, height))
-    return PILImageModule.fromarray(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))
+    return Image.fromarray(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))
 
 
 def preprocess(
-    image: PILImage,
+    image: Image,
     num_rows: int,
     black_white_thresh: int,
     rotation_deg: int,
@@ -110,7 +105,7 @@ if __name__ == "__main__":
     rotation_deg = 90
     crop_coords = [(57, 82), (960, 67), (949, 723), (75, 735)]
     segments = preprocess(
-        PILImageModule.open(sys.argv[1]),
+        Image.open(sys.argv[1]),
         num_rows,
         black_white_thresh,
         rotation_deg,
