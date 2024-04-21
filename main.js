@@ -133,24 +133,29 @@ function broadcastProgress(elementId, newProgress) {
 }
 
 function handleImageFromSerialStdoutLine(imageFromSerialStdoutLine) {
+  log(`image-from-serial.py stdout: ${imageFromSerialStdoutLine}`);
   try {
     image_path = JSON.parse(imageFromSerialStdoutLine)["image_path"];
     log(`image path received from image-from-serial.py: ${image_path}`);
   } catch (error) {
-    log(`image-from-serial.py stdout: ${imageFromSerialStdoutLine}`);
+    log(`image-from-serial.py stdout line is not json.`);
     return;
   }
 }
 
 function handleCalibrateStdoutLine(calibrateStdoutLine) {
+  log(`calibrate.py stdout: ${calibrateStdoutLine}`);
   try {
     found_calibration = JSON.parse(calibrateStdoutLine)["calibration"];
-    calibration = found_calibration;
-    log("calibration received from calibrate.py");
   } catch (error) {
-    log(`calibrate.py stdout: ${calibrateStdoutLine}`);
+    log(`calibrate.py stdout line is not json.`);
     return;
   }
+  if (!found_calibration) {
+    log("JSON.parse(calibration stdout line) returned falsey!");
+  }
+  calibration = found_calibration;
+  log("calibration received from calibrate.py");
 }
 
 function handlePredictionStdoutLine(predictionStdoutLine) {
@@ -165,7 +170,8 @@ function handleVerifStdoutLine(data) {
   try {
     data_object = JSON.parse(data);
   } catch {
-    broadcastStatus("ERROR: verification returned malformed input!");
+    log("verification returned malformed input!");
+    broadcastProgress("verification-progress", "failed");
     return;
   }
   if (validateVerifResults(data_object)) {
@@ -173,7 +179,8 @@ function handleVerifStdoutLine(data) {
       JSON.stringify({ type: "verif-output", data: data })
     );
   } else {
-    broadcastStatus("ERROR: validation failed!");
+    log("verification output failed to validate schema!");
+    broadcastProgress("verification-progress", "failed");
   }
 }
 
