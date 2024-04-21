@@ -91,6 +91,11 @@ function spawnAndHandleLines(
   });
   thisProcess.on("close", (code) => {
     console.log(`PID ${thisProcess.pid} exited with code ${code}`);
+    log(`runningProcesses of this name before: ${runningProcesses[name]}`); // DELETEME
+    runningProcesses[name] = runningProcesses[name].filter(
+      (x) => x !== thisProcess.pid
+    );
+    log(`runningProcesses of this name after: ${runningProcesses[name]}`); // DELETEME
     exit_handler(code, thisProcess.pid);
   });
 }
@@ -173,7 +178,13 @@ function handleVerifStdoutLine(data) {
 }
 
 function handleTakePictureRequest() {
-  broadcastProgress("take-picture-progress", "started");
+  name = "take-picture";
+  alreadyRunningPids = runningProcesses[name];
+  if (alreadyRunningPids && alreadyRunningPids.length > 0) {
+    log(`"${name}" (PID ${alreadyRunningPids}) is already running!`);
+    broadcastStatus(`${name} is already running!`);
+    return;
+  }
   // spawnAndHandleLines(
   //   process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
   //   [
@@ -208,7 +219,7 @@ function handleCalibrationRequest() {
   }
   name = "calibration";
   alreadyRunningPids = runningProcesses[name];
-  if (alreadyRunningPids) {
+  if (alreadyRunningPids && alreadyRunningPids.length > 0) {
     log(`"${name}" (PID ${alreadyRunningPids}) is already running!`);
     broadcastStatus(`${name} is already running!`);
     return;
@@ -239,7 +250,7 @@ function handlePredictionRequest() {
   }
   name = "prediction";
   alreadyRunningPids = runningProcesses[name];
-  if (alreadyRunningPids) {
+  if (alreadyRunningPids && alreadyRunningPids.length > 0) {
     log(`"${name}" (PID ${alreadyRunningPids}) is already running!`);
     broadcastStatus(`${name} is already running!`);
     return;
@@ -265,7 +276,7 @@ function handlePredictionRequest() {
 function handleVerificationRequest(message) {
   name = "verification";
   alreadyRunningPids = runningProcesses[name];
-  if (alreadyRunningPids) {
+  if (alreadyRunningPids && alreadyRunningPids.length > 0) {
     log(`"${name}" (PID ${alreadyRunningPids}) is already running!`);
     broadcastStatus(`${name} is already running!`);
     return;
