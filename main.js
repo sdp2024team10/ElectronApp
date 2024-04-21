@@ -21,6 +21,8 @@ console.log(`WebSocket server started on ws://localhost:${WEBSOCK_PORT}`);
 
 var activeWebsockConnections = new Set();
 
+var runningProcesses = {};
+
 var calibration = {};
 var image_path = "";
 var stepsCompleted = {
@@ -46,6 +48,7 @@ function log(...args) {
 }
 
 function spawnAndHandleLines(
+  name,
   binary,
   args,
   options,
@@ -64,6 +67,10 @@ function spawnAndHandleLines(
   }
   const thisProcess = spawn(binary, args, options);
   log(`Spawned process PID: ${thisProcess.pid}`);
+  if (!runningProcesses[name]) {
+    runningProcesses[name] = [];
+  }
+  runningProcesses[name].push(thisProcess.pid);
   if (stdin_str != "") {
     thisProcess.stdin.write(stdin_str);
     thisProcess.stdin.end();
@@ -199,8 +206,16 @@ function handleCalibrationRequest() {
     broadcastStatus("ERROR: you must take a picture before you can calibrate!");
     return;
   }
+  name = "calibration";
+  alreadyRunningPids = runningProcesses[name];
+  if (alreadyRunningPids) {
+    log(`"${name}" (PID ${alreadyRunningPids}) is already running!`);
+    broadcastStatus(`${name} is already running!`);
+    return;
+  }
   broadcastProgress("calibration-progress", "started");
   spawnAndHandleLines(
+    name,
     process.env.CALIBRATE_PYTHON_PATH,
     [process.env.CALIBRATE_PATH, image_path, JSON.stringify(calibration)],
     { cwd: process.env.CALIBRATE_CWD },
@@ -210,7 +225,7 @@ function handleCalibrationRequest() {
       handleExitCode(
         code,
         pid,
-        "calibration",
+        name,
         (progressElementId = "calibration-progress")
       )
   );
@@ -222,8 +237,16 @@ function handlePredictionRequest() {
     broadcastStatus("ERROR: you must calibrate before you can run prediction!");
     return;
   }
+  name = "prediction";
+  alreadyRunningPids = runningProcesses[name];
+  if (alreadyRunningPids) {
+    log(`"${name}" (PID ${alreadyRunningPids}) is already running!`);
+    broadcastStatus(`${name} is already running!`);
+    return;
+  }
   broadcastProgress("prediction-progress", "started");
   spawnAndHandleLines(
+    name,
     process.env.PREDICT_PYTHON_PATH,
     [process.env.PREDICT_PATH, image_path, JSON.stringify(calibration)],
     { cwd: process.env.PREDICT_CWD },
@@ -233,15 +256,23 @@ function handlePredictionRequest() {
       handleExitCode(
         code,
         pid,
-        "prediction",
+        name,
         (progressElementId = "prediction-progress")
       )
   );
 }
 
 function handleVerificationRequest(message) {
+  name = "verification";
+  alreadyRunningPids = runningProcesses[name];
+  if (alreadyRunningPids) {
+    log(`"${name}" (PID ${alreadyRunningPids}) is already running!`);
+    broadcastStatus(`${name} is already running!`);
+    return;
+  }
   broadcastProgress("verficiation-progress", "started");
   spawnAndHandleLines(
+    name,
     process.env.VERIF_PYTHON_PATH,
     [process.env.VERIF_PATH],
     { cwd: process.env.VERIF_CWD },
@@ -251,7 +282,7 @@ function handleVerificationRequest(message) {
       handleExitCode(
         code,
         pid,
-        "verification",
+        name,
         (progressElementId = "verification-progress")
       ),
     (stdin_str = JSON.stringify(message))
