@@ -16,29 +16,35 @@ CALIBRATION = {
 
 
 class SelectCoordinates:
-    def __init__(self, master, image: Image):
+    def __init__(self, master, image: Image, initial_calibration: dict = None):
         self.master = master
         self.canvas = tk.Canvas(master, cursor="cross")
         self.canvas.pack(fill=tk.BOTH, expand=True)
-        self.load_image(image)
+        if initial_calibration is not None:
+            self.load_image(image, initial_calibration["crop_coords"])
+        else:
+            self.load_image(image)
         self.dragging_point = None
 
-    def load_image(self, image: Image):
+    def load_image(self, image: Image, starting_points: list = None):
         self.image = image
         self.cv_image = cv2.cvtColor(np.array(self.image), cv2.COLOR_RGB2BGR)
         self.tk_image = ImageTk.PhotoImage(self.image)
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.tk_image)
-        self.set_initial_points()
+        self.set_initial_points(starting_points)
 
-    def set_initial_points(self):
+    def set_initial_points(self, starting_points: list = None):
         width, height = self.image.size
-        self.points = [
-            (width * 0.25, height * 0.25),
-            (width * 0.75, height * 0.25),
-            (width * 0.75, height * 0.75),
-            (width * 0.25, height * 0.75),
-        ]
-        CALIBRATION["crop_coords"] = self.points
+        if starting_points == None:
+            self.points = [
+                (width * 0.25, height * 0.25),
+                (width * 0.75, height * 0.25),
+                (width * 0.75, height * 0.75),
+                (width * 0.25, height * 0.75),
+            ]
+            CALIBRATION["crop_coords"] = self.points
+        else:
+            self.points = starting_points
         self.draw_points_and_lines()
         self.canvas.bind("<Button-1>", self.on_click)
         self.canvas.bind("<B1-Motion>", self.on_drag)
@@ -85,7 +91,7 @@ class SelectCoordinates:
 
 
 class CalibrationOptions:
-    def __init__(self, parent):
+    def __init__(self, parent, initial_calibration: dict = None):
         self.parent = parent
         self.num_rows_slider = Scale(
             parent, from_=1, to=15, orient=tk.HORIZONTAL, label="number of rows"
@@ -144,6 +150,24 @@ class CalibrationOptions:
         )
         self.trim_bottom_slider.set(5)
         self.trim_bottom_slider.pack(fill=tk.X)
+        if initial_calibration is not None:
+            self.num_rows_slider.set(initial_calibration["num_rows"])
+            self.black_white_thresh_slider.set(
+                initial_calibration["black_white_thresh"]
+            )
+            self.rotation_deg_combobox.set(initial_calibration["rotation_deg"])
+            self.trim_left_slider.set(initial_calibration["trim_sizes_px"]["left"])
+            self.trim_right_slider.set(initial_calibration["trim_sizes_px"]["right"])
+            self.trim_top_slider.set(initial_calibration["trim_sizes_px"]["top"])
+            self.trim_bottom_slider.set(initial_calibration["trim_sizes_px"]["bottom"])
+        else:
+            self.num_rows_slider.set(10)
+            self.black_white_thresh_slider.set(145)
+            self.rotation_deg_combobox.set("270")
+            self.trim_left_slider.set(5)
+            self.trim_right_slider.set(5)
+            self.trim_top_slider.set(5)
+            self.trim_bottom_slider.set(5)
 
 
 class ScrollableImageFrame:
@@ -177,6 +201,14 @@ class ScrollableImageFrame:
 
 if __name__ == "__main__":
     image = Image.open(sys.argv[1])
+    if len(sys.argv) > 2:
+        initial_calibration = json.loads(sys.argv[2])
+        if initial_calibration == dict():
+            initial_calibration = None
+    else:
+        initial_calibration = None
+
+    print(initial_calibration)
 
     root = tk.Tk()
     root.title("Calibration")
@@ -200,9 +232,11 @@ if __name__ == "__main__":
     images_window.geometry("640x360")
     images_window.protocol("WM_DELETE_WINDOW", do_nothing)
 
-    coordinate_selection = SelectCoordinates(select_coords_window, image)
+    coordinate_selection = SelectCoordinates(
+        select_coords_window, image, initial_calibration
+    )
 
-    options = CalibrationOptions(options_window)
+    options = CalibrationOptions(options_window, initial_calibration)
 
     output_image_frame = ScrollableImageFrame(images_window)
 

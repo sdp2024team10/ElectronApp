@@ -30,8 +30,7 @@ var stepsCompleted = {
   verification: false,
 };
 
-function resetGlobals() {
-  calibration = {};
+function resetImageAndProgress() {
   image_path = "";
   stepsCompleted = {
     "take-picture": false,
@@ -203,7 +202,7 @@ function handleCalibrationRequest() {
   broadcastProgress("calibration-progress", "started");
   spawnAndHandleLines(
     process.env.CALIBRATE_PYTHON_PATH,
-    [process.env.CALIBRATE_PATH, image_path],
+    [process.env.CALIBRATE_PATH, image_path, JSON.stringify(calibration)],
     { cwd: process.env.CALIBRATE_CWD },
     (line) => handleCalibrateStdoutLine(line),
     (line) => log(`calibrate.py stderr: ${line}`),
@@ -300,7 +299,7 @@ function main() {
             handleCalibrationRequest();
             break;
           case "reload":
-            resetGlobals();
+            resetImageAndProgress();
             break;
           default:
             log(
