@@ -7,7 +7,6 @@
 #define REG_DEBUG_ON
 
 void initCam() {
-
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
@@ -27,17 +26,17 @@ void initCam() {
   config.pin_sscb_scl = SIOC_GPIO_NUM;
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
-//   config.xclk_freq_hz = 20000000;
-  config.xclk_freq_hz = 2000000;
+  config.xclk_freq_hz = 20000000;
+  // config.xclk_freq_hz = 2000000;
   config.pixel_format = PIXFORMAT_JPEG;
-  //   config.pixel_format = PIXFORMAT_GRAYSCALE;
-//   config.frame_size = FRAMESIZE_QXGA;
-  config.frame_size = FRAMESIZE_QVGA;
+  // config.pixel_format = PIXFORMAT_GRAYSCALE;
+  config.frame_size = FRAMESIZE_QXGA;
+  // config.frame_size = FRAMESIZE_QVGA;
   config.jpeg_quality = 25;
   config.fb_count = 2;
   config.fb_location = CAMERA_FB_IN_PSRAM;
-//   config.fb_count = 1;
-//   config.fb_location = CAMERA_FB_IN_DRAM;
+  // config.fb_count = 1;
+  // config.fb_location = CAMERA_FB_IN_DRAM;
 
 #if defined(CAMERA_MODEL_ESP_EYE)
   pinMode(13, INPUT_PULLUP);
@@ -47,7 +46,7 @@ void initCam() {
   // camera init
   esp_err_t err = esp_camera_init(&config);
   if (err != ESP_OK) {
-    Serial.printf("Camera init failed with error 0x%x", err);
+    Serial.printf("Camera init failed with error 0x%x\n", err);
     return;
   }
 
@@ -130,8 +129,9 @@ void takePictureAndSubmit() {
 void setup() {
   //   pinMode(15, OUTPUT);
   //   digitalWrite(15, LOW);
-//   Serial.begin(921600);
-  Serial.begin(115200);
+  Serial.begin(460800);
+  Serial.println("");
+  Serial.println("hello, world!");
   initCam();
   takePictureAndSubmit();
   Serial.println("goodbye, world!");
