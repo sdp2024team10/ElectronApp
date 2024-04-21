@@ -133,10 +133,11 @@ function handleImageFromSerialStdoutLine(imageFromSerialStdoutLine) {
 
 function handleCalibrateStdoutLine(calibrateStdoutLine) {
   try {
-    calibration = JSON.parse(calibrateStdoutLine)["calibration"];
+    found_calibration = JSON.parse(calibrateStdoutLine)["calibration"];
+    calibration = found_calibration;
     log("calibration received from calibrate.py");
   } catch (error) {
-    log(`calibrate.py stdout: ${imageFromSerialStdoutLine}`);
+    log(`calibrate.py stdout: ${calibrateStdoutLine}`);
     return;
   }
 }
