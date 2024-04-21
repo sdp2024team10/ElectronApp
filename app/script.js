@@ -258,6 +258,7 @@ function main() {
   };
   ws.onclose = function () {
     console.log("websocket is closed...");
+    updateStatusElement("backend has closed connection. Please restart.");
   };
   ws.onmessage = function (event) {
     console.log(event.data);
