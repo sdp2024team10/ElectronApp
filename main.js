@@ -185,30 +185,32 @@ function handleTakePictureRequest() {
     broadcastStatus(`${name} is already running!`);
     return;
   }
-  // spawnAndHandleLines(
-  //   process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
-  //   [
-  //     process.env.IMAGE_FROM_SERIAL_PATH,
-  //     process.env.COM_PORT,
-  //     process.env.BAUD_RATE,
-  //   ],
-  //   {}, // Options
-  //   (line) => handleImageFromSerialStdoutLine(line),
-  //   (line) => log(`image-from-serial.py stderr : ${line}`),
-  //   (code, pid) =>
-  //     handleExitCode(
-  //       code,
-  //       pid,
-  //       "take-picture",
-  //       (progressElementId = "take-picture-progress")
-  //     )
-  // );
-  const testImagePath = "../testimg.jpeg";
-  handleImageFromSerialStdoutLine(
-    JSON.stringify({ image_path: testImagePath })
+  broadcastProgress("take-picture-progress", "started");
+  spawnAndHandleLines(
+    name,
+    process.env.IMAGE_FROM_SERIAL_PYTHON_PATH,
+    [
+      process.env.IMAGE_FROM_SERIAL_PATH,
+      process.env.COM_PORT,
+      process.env.BAUD_RATE,
+    ],
+    {}, // Options
+    (line) => handleImageFromSerialStdoutLine(line),
+    (line) => log(`image-from-serial.py stderr : ${line}`),
+    (code, pid) =>
+      handleExitCode(
+        code,
+        pid,
+        name,
+        (progressElementId = "take-picture-progress")
+      )
   );
-  broadcastProgress("take-picture-progress", "completed");
-  stepsCompleted["take-picture"] = true;
+  // const testImagePath = "../testimg.jpeg";
+  // handleImageFromSerialStdoutLine(
+  //   JSON.stringify({ image_path: testImagePath })
+  // );
+  // broadcastProgress("take-picture-progress", "completed");
+  // stepsCompleted["take-picture"] = true;
 }
 
 function handleCalibrationRequest() {
