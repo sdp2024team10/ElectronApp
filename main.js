@@ -23,6 +23,8 @@ var activeWebsockConnections = new Set();
 
 var runningProcesses = {};
 
+var predictionStartTime = null;
+
 var calibration = {};
 var image_path = "";
 var stepsCompleted = {
@@ -220,6 +222,17 @@ function handleTakePictureRequest() {
   // stepsCompleted["take-picture"] = true;
 }
 
+function handlePredictionExitCode(code, pid) {
+  const predictionTimeS = (performance.now() - predictionStartTime) / 1000;
+  log(`predict.py time elapsed: ${predictionTimeS} seconds`);
+  handleExitCode(
+    code,
+    pid,
+    "prediction",
+    (progressElementId = "prediction-progress")
+  );
+}
+
 function handleCalibrationRequest() {
   if (!stepsCompleted["take-picture"]) {
     log("ERROR: you must take a picture before you can calibrate!");
@@ -264,6 +277,7 @@ function handlePredictionRequest() {
     broadcastStatus(`${name} is already running!`);
     return;
   }
+  predictionStartTime = performance.now();
   broadcastProgress("prediction-progress", "started");
   spawnAndHandleLines(
     name,
@@ -272,13 +286,7 @@ function handlePredictionRequest() {
     { cwd: process.env.PREDICT_CWD },
     (line) => handlePredictionStdoutLine(line),
     (line) => log(`predict.py stderr : ${line}`),
-    (code, pid) =>
-      handleExitCode(
-        code,
-        pid,
-        name,
-        (progressElementId = "prediction-progress")
-      )
+    (code, pid) => handlePredictionExitCode(code, pid)
   );
 }
 
