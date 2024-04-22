@@ -50,6 +50,16 @@ def strip_black_edges(image: Image, padding=10) -> Image:
     return Image.fromarray(stripped_arr)
 
 
+def equalizeHist(image) -> Image:
+    # image_array = np.array(image).astype("uint8")
+    grayscale_cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2GRAY)
+    equalized_grayscale_cv_image = cv2.equalizeHist(grayscale_cv_image)
+    equalized_cv_image = cv2.cvtColor(
+        np.array(equalized_grayscale_cv_image), cv2.COLOR_GRAY2BGR
+    )
+    return Image.fromarray(equalized_cv_image)
+
+
 def crop(image: Image, crop_coords) -> Image:
     cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
     pts1 = np.float32(crop_coords)
@@ -70,6 +80,7 @@ def preprocess(
 ):
     # image = image.filter(ImageFilter.SHARPEN)
     image = crop(image, crop_coords)
+    image = equalizeHist(image)
     image = image.rotate(ROTATION_DEG, expand=True)
     image = convert_black_white(image, black_white_thresh)
     output = []
