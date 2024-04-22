@@ -28,6 +28,9 @@ class SelectCoordinates:
         else:
             self.load_image(image)
         self.dragging_point = None
+        self.canvas.bind("<Button-1>", self.on_click)
+        self.canvas.bind("<B1-Motion>", self.on_drag)
+        self.canvas.bind("<ButtonRelease-1>", self.on_release)
 
     def load_image(self, image: Image, starting_points: list = None):
         self.image = image
@@ -49,9 +52,6 @@ class SelectCoordinates:
         else:
             self.points = starting_points
         self.draw_points_and_lines()
-        self.canvas.bind("<Button-1>", self.on_click)
-        self.canvas.bind("<B1-Motion>", self.on_drag)
-        self.canvas.bind("<ButtonRelease-1>", self.on_release)
 
     def draw_points_and_lines(self):
         self.canvas.delete("all")  # Clear existing drawing
