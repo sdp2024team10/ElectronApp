@@ -216,27 +216,29 @@ if __name__ == "__main__":
     root = tk.Tk()
     root.withdraw()  # This hides the root window
 
-    def do_nothing():
-        return
+    def close_all_windows():
+        print("Closing all windows...")
+        root.destroy()
 
     buttons_window = tk.Toplevel(root)
     buttons_window.title("Calibration")
     buttons_window.geometry("200x55")
+    buttons_window.protocol("WM_DELETE_WINDOW", close_all_windows)
 
     select_coords_window = tk.Toplevel(root)
     select_coords_window.title("Select Points")
     select_coords_window.geometry(f"{image.size[0]}x{image.size[1]}")
-    select_coords_window.protocol("WM_DELETE_WINDOW", do_nothing)
+    select_coords_window.protocol("WM_DELETE_WINDOW", close_all_windows)
 
     options_window = tk.Toplevel(root)
     options_window.title("Options")
     options_window.geometry("300x450")
-    options_window.protocol("WM_DELETE_WINDOW", do_nothing)
+    options_window.protocol("WM_DELETE_WINDOW", close_all_windows)
 
     images_window = tk.Toplevel(root)
     images_window.title("Preprocessing Output")
     images_window.geometry("640x360")
-    images_window.protocol("WM_DELETE_WINDOW", do_nothing)
+    images_window.protocol("WM_DELETE_WINDOW", close_all_windows)
 
     coordinate_selection = SelectCoordinates(
         select_coords_window, image, initial_calibration
