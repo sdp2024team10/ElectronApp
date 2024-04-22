@@ -174,6 +174,8 @@ class CalibrationOptions:
             )
         else:
             self.black_white_thresh_slider.set(145)
+        # the save/exit button is added to here from outside
+        # it's quick and dirty
 
 
 class ScrollableImageFrame:
@@ -222,14 +224,6 @@ if __name__ == "__main__":
     def close_all_windows():
         print("Closing all windows...")
         root.destroy()
-
-    buttons_window = tk.Toplevel(root)
-    buttons_window.title("Calibration")
-    # TODO what does +100+150 accomplish?
-    # buttons_window.geometry("300x300+100+150")
-    buttons_window.geometry("200x55")
-    buttons_window.attributes("-topmost", True)
-    buttons_window.protocol("WM_DELETE_WINDOW", close_all_windows)
 
     select_coords_window = tk.Toplevel(root)
     select_coords_window.title("Select Points")
@@ -313,7 +307,7 @@ if __name__ == "__main__":
         quit()
 
     export_exit_button = ttk.Button(
-        buttons_window, text="Save & Exit", command=export_exit
+        options_window, text="Save & Exit", command=export_exit
     )
     # TODO what does pady accomplish?
     # export_exit_button.pack(fill=tk.X, pady=5)
