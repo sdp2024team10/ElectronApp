@@ -223,6 +223,7 @@ if __name__ == "__main__":
     buttons_window = tk.Toplevel(root)
     buttons_window.title("Calibration")
     buttons_window.geometry("200x55")
+    buttons_window.attributes("-topmost", True)
     buttons_window.protocol("WM_DELETE_WINDOW", close_all_windows)
 
     select_coords_window = tk.Toplevel(root)
@@ -234,6 +235,7 @@ if __name__ == "__main__":
     options_window.title("Options")
     options_window.geometry("300x450")
     options_window.protocol("WM_DELETE_WINDOW", close_all_windows)
+    options_window.attributes("-topmost", True)
 
     images_window = tk.Toplevel(root)
     images_window.title("Preprocessing Output")
