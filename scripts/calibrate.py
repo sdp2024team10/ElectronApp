@@ -14,23 +14,24 @@ sys.stdout.reconfigure(line_buffering=True, write_through=True)
 class SelectCoordinates:
     def __init__(self, master, image: Image, initial_calibration: dict = None):
         self.master = master
+        self.image = image
+        self.cv_image = cv2.cvtColor(np.array(self.image), cv2.COLOR_RGB2BGR)
+        self.tk_image = ImageTk.PhotoImage(self.image)
+
         self.canvas = tk.Canvas(master, cursor="cross")
         self.canvas.pack(fill=tk.BOTH, expand=True)
+        self.canvas.create_image(0, 0, anchor=tk.NW, image=self.tk_image)
+
+        self.points = [None, None, None, None]
         if initial_calibration is not None:
-            self.load_image(image, initial_calibration["crop_coords"])
+            self.set_initial_points(initial_calibration["crop_coords"])
         else:
-            self.load_image(image)
+            self.set_initial_points()
+
         self.dragging_point = None
         self.canvas.bind("<Button-1>", self.on_click)
         self.canvas.bind("<B1-Motion>", self.on_drag)
         self.canvas.bind("<ButtonRelease-1>", self.on_release)
-
-    def load_image(self, image: Image, starting_points: list = None):
-        self.image = image
-        self.cv_image = cv2.cvtColor(np.array(self.image), cv2.COLOR_RGB2BGR)
-        self.tk_image = ImageTk.PhotoImage(self.image)
-        self.canvas.create_image(0, 0, anchor=tk.NW, image=self.tk_image)
-        self.set_initial_points(starting_points)
 
     def set_initial_points(self, starting_points: list = None):
         width, height = self.image.size
