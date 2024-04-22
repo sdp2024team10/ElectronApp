@@ -296,11 +296,6 @@ if __name__ == "__main__":
     # )
     # reset_image_button.pack(fill=tk.X, pady=5)
 
-    test_button = ttk.Button(buttons_window, text="Test", command=run_preprocessing)
-    # TODO what does pady accomplish?
-    # test_button.pack(fill=tk.X, pady=5)
-    test_button.pack(fill=tk.X)
-
     def export_exit():
         print(
             json.dumps(
