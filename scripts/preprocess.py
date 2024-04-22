@@ -4,6 +4,10 @@ from typing import List
 import sys
 import cv2
 
+ROTATION_DEG = 270
+NUM_ROWS = 10
+GAUSSIAN_BLUR_KERNEL_SIZE = 17
+
 
 def convert_black_white(image: Image, threshold=150):
     return image.convert("L").point(lambda x: 255 if x < threshold else 0, "1")
@@ -46,20 +50,6 @@ def strip_black_edges(image: Image, padding=10) -> Image:
     return Image.fromarray(stripped_arr)
 
 
-def trim(image: Image, trim_sizes_px: dict) -> Image:
-    width, height = image.size
-    left = trim_sizes_px["left"]
-    upper = trim_sizes_px["top"]
-    right = width - trim_sizes_px["right"]
-    lower = height - trim_sizes_px["bottom"]
-    # clamp image size bounds
-    left = max(left, 0)
-    upper = max(upper, 0)
-    right = min(right, width)
-    lower = min(lower, height)
-    return image.crop((left, upper, right, lower))
-
-
 def crop(image: Image, crop_coords) -> Image:
     cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
     pts1 = np.float32(crop_coords)
@@ -75,20 +65,15 @@ def crop(image: Image, crop_coords) -> Image:
 
 def preprocess(
     image: Image,
-    num_rows: int,
     black_white_thresh: int,
-    rotation_deg: int,
     crop_coords,
-    trim_sizes_px={"left": 0, "right": 0, "top": 0, "bottom": 0},
 ):
     # image = image.filter(ImageFilter.SHARPEN)
     image = crop(image, crop_coords)
-    assert rotation_deg % 90 == 0, "rotation must be a multiple of 90"
-    image = image.rotate(rotation_deg, expand=True)
-    image = trim(image, trim_sizes_px)
+    image = image.rotate(ROTATION_DEG, expand=True)
     image = convert_black_white(image, black_white_thresh)
     output = []
-    for i, segment in enumerate(split_rows(image, num_rows)):
+    for i, segment in enumerate(split_rows(image, NUM_ROWS)):
         extrema = segment.convert("L").getextrema()
         if extrema[0] == extrema[1] == 0:
             print(
@@ -100,20 +85,12 @@ def preprocess(
     return output
 
 
+# this is not usually the case, this is just an example
 if __name__ == "__main__":
-    # trim_sizes_px = {"left": 80, "right": 40, "top": 0, "bottom": 0}
-    trim_sizes_px = {"left": 10, "right": 10, "top": 0, "bottom": 0}
-    num_rows = 10
-    black_white_thresh = 100
-    rotation_deg = 90
-    crop_coords = [(57, 82), (960, 67), (949, 723), (75, 735)]
     segments = preprocess(
         Image.open(sys.argv[1]),
-        num_rows,
+        [(57, 82), (960, 67), (949, 723), (75, 735)],
         black_white_thresh,
-        rotation_deg,
-        crop_coords,
-        trim_sizes_px,
     )
     for i, segment in enumerate(segments):
         segment.save(f"segment{i}.bmp")

@@ -1,10 +1,12 @@
 import tkinter as tk
+import queue
 from tkinter import ttk, Canvas, Scrollbar, Scale
 from PIL import Image, ImageTk
 import numpy as np
 import cv2
 import sys
 import json
+import threading
 from preprocess import preprocess
 
 # required for nodejs to parse in real time
@@ -16,8 +18,21 @@ class PageCornerLocationError(Exception):
 
 
 class SelectCoordinates:
-    def __init__(self, master, image: Image, initial_calibration: dict = None):
+    def __init__(
+        self,
+        master,
+        image: Image,
+        initial_calibration: dict = None,
+        call_func_on_update=None,
+    ):
         self.master = master
+
+        self.call_func_on_update = call_func_on_update
+
+        # TODO screen dimensions global
+        # screen_width = master.winfo_screenwidth()
+        # screen_height = master.winfo_screenheight()
+        # master.geometry(f"{screen_width}x{screen_height}")
         self.image = image
         self.cv_image = cv2.cvtColor(np.array(self.image), cv2.COLOR_RGB2BGR)
         self.tk_image = ImageTk.PhotoImage(self.image)
@@ -33,9 +48,14 @@ class SelectCoordinates:
             self.set_initial_points()
 
         self.dragging_point = None
+
         self.canvas.bind("<Button-1>", self.on_click)
         self.canvas.bind("<B1-Motion>", self.on_drag)
         self.canvas.bind("<ButtonRelease-1>", self.on_release)
+
+    # TODO replace reference to this function
+    # def reset_image(self):
+    #     self.set_initial_points()
 
     def set_initial_points(self, starting_points: list = None):
         width, height = self.image.size
@@ -75,6 +95,8 @@ class SelectCoordinates:
                 self.points[next_index][1],
                 fill="green",
             )
+        if self.call_func_on_update is not None:
+            self.call_func_on_update()
 
     def on_click(self, event):
         for i, point in enumerate(self.points):
@@ -131,83 +153,27 @@ class SelectCoordinates:
 
 
 class CalibrationOptions:
-    def __init__(self, parent, initial_calibration: dict = None):
+    def __init__(
+        self, parent, initial_calibration: dict = None, call_func_on_update=None
+    ):
         self.parent = parent
-        self.num_rows_slider = Scale(
-            parent, from_=1, to=15, orient=tk.HORIZONTAL, label="number of rows"
-        )
-        self.num_rows_slider.pack(fill=tk.X)
-        self.num_rows_slider.set(10)
-
+        self.call_func_on_update = call_func_on_update
         self.black_white_thresh_slider = Scale(
             parent,
             from_=0,
             to=255,
             orient=tk.HORIZONTAL,
             label="black/white threshold",
+            command=self.call_func_on_update,
         )
         self.black_white_thresh_slider.set(145)
         self.black_white_thresh_slider.pack(fill=tk.X)
-
-        self.rotation_deg_options = ["90", "180", "270"]
-        self.rotation_deg_label = ttk.Label(parent, text="rotation")
-        self.rotation_deg_label.pack(fill=tk.X)
-        self.rotation_deg_combobox = ttk.Combobox(
-            parent, values=self.rotation_deg_options
-        )
-        self.rotation_deg_combobox.set("270")
-        self.rotation_deg_combobox.pack(fill=tk.X)
-
-        self.trim_left_slider = Scale(
-            parent,
-            from_=0,
-            to=255,
-            orient=tk.HORIZONTAL,
-            label="trim pixels left",
-        )
-        self.trim_left_slider.set(5)
-        self.trim_left_slider.pack(fill=tk.X)
-        self.trim_right_slider = Scale(
-            parent,
-            from_=0,
-            to=255,
-            orient=tk.HORIZONTAL,
-            label="trim pixels right",
-        )
-        self.trim_right_slider.set(5)
-        self.trim_right_slider.pack(fill=tk.X)
-        self.trim_top_slider = Scale(
-            parent, from_=0, to=255, orient=tk.HORIZONTAL, label="trim pixels top"
-        )
-        self.trim_top_slider.set(5)
-        self.trim_top_slider.pack(fill=tk.X)
-        self.trim_bottom_slider = Scale(
-            parent,
-            from_=0,
-            to=255,
-            orient=tk.HORIZONTAL,
-            label="trim pixels bottom",
-        )
-        self.trim_bottom_slider.set(5)
-        self.trim_bottom_slider.pack(fill=tk.X)
         if initial_calibration is not None:
-            self.num_rows_slider.set(initial_calibration["num_rows"])
             self.black_white_thresh_slider.set(
                 initial_calibration["black_white_thresh"]
             )
-            self.rotation_deg_combobox.set(initial_calibration["rotation_deg"])
-            self.trim_left_slider.set(initial_calibration["trim_sizes_px"]["left"])
-            self.trim_right_slider.set(initial_calibration["trim_sizes_px"]["right"])
-            self.trim_top_slider.set(initial_calibration["trim_sizes_px"]["top"])
-            self.trim_bottom_slider.set(initial_calibration["trim_sizes_px"]["bottom"])
         else:
-            self.num_rows_slider.set(10)
             self.black_white_thresh_slider.set(145)
-            self.rotation_deg_combobox.set("270")
-            self.trim_left_slider.set(5)
-            self.trim_right_slider.set(5)
-            self.trim_top_slider.set(5)
-            self.trim_bottom_slider.set(5)
 
 
 class ScrollableImageFrame:
@@ -259,6 +225,8 @@ if __name__ == "__main__":
 
     buttons_window = tk.Toplevel(root)
     buttons_window.title("Calibration")
+    # TODO what does +100+150 accomplish?
+    # buttons_window.geometry("300x300+100+150")
     buttons_window.geometry("200x55")
     buttons_window.attributes("-topmost", True)
     buttons_window.protocol("WM_DELETE_WINDOW", close_all_windows)
@@ -279,33 +247,58 @@ if __name__ == "__main__":
     images_window.geometry("640x360")
     images_window.protocol("WM_DELETE_WINDOW", close_all_windows)
 
-    coordinate_selection = SelectCoordinates(
-        select_coords_window, image, initial_calibration
-    )
-
-    options = CalibrationOptions(options_window, initial_calibration)
-
     output_image_frame = ScrollableImageFrame(images_window)
 
     def run_preprocessing():
         output_image_frame.clear()
         preprocessing_output = preprocess(
             image,
-            options.num_rows_slider.get(),
             options.black_white_thresh_slider.get(),
-            int(options.rotation_deg_combobox.get()),
             coordinate_selection.points,
-            {
-                "left": int(options.trim_left_slider.get()),
-                "right": int(options.trim_right_slider.get()),
-                "top": int(options.trim_top_slider.get()),
-                "bottom": int(options.trim_bottom_slider.get()),
-            },
         )
         for output_image in preprocessing_output:
             output_image_frame.add_image(output_image)
 
+    preprocessing_task_queue = queue.Queue(maxsize=2)
+
+    def add_job_to_preprocess_queue(x=None):
+        try:
+            preprocessing_task_queue.put_nowait(x)
+        except queue.Full:
+            pass
+
+    def service_preprocess_queue():
+        while True:
+            preprocessing_task_queue.get()  # wait for item in queue
+            run_preprocessing()
+            preprocessing_task_queue.task_done()
+
+    preprocess_queue_servicer_thread = threading.Thread(target=service_preprocess_queue)
+    preprocess_queue_servicer_thread.daemon = True
+    preprocess_queue_servicer_thread.start()
+
+    coordinate_selection = SelectCoordinates(
+        select_coords_window,
+        image,
+        initial_calibration,
+        call_func_on_update=add_job_to_preprocess_queue,
+    )
+
+    options = CalibrationOptions(
+        options_window,
+        initial_calibration,
+        call_func_on_update=add_job_to_preprocess_queue,
+    )
+
+    # TODO do we really need this?
+    # reset_image_button = ttk.Button(
+    #     buttons_window, text="Reset Image", command=coordinate_selection.reset_image
+    # )
+    # reset_image_button.pack(fill=tk.X, pady=5)
+
     test_button = ttk.Button(buttons_window, text="Test", command=run_preprocessing)
+    # TODO what does pady accomplish?
+    # test_button.pack(fill=tk.X, pady=5)
     test_button.pack(fill=tk.X)
 
     def export_exit():
@@ -313,18 +306,10 @@ if __name__ == "__main__":
             json.dumps(
                 {
                     "calibration": {
-                        "num_rows": int(options.num_rows_slider.get()),
                         "black_white_thresh": int(
                             options.black_white_thresh_slider.get()
                         ),
-                        "rotation_deg": int(options.rotation_deg_combobox.get()),
                         "crop_coords": coordinate_selection.points,
-                        "trim_sizes_px": {
-                            "left": int(options.trim_left_slider.get()),
-                            "right": int(options.trim_right_slider.get()),
-                            "top": int(options.trim_top_slider.get()),
-                            "bottom": int(options.trim_bottom_slider.get()),
-                        },
                     }
                 }
             )
@@ -335,6 +320,8 @@ if __name__ == "__main__":
     export_exit_button = ttk.Button(
         buttons_window, text="Save & Exit", command=export_exit
     )
+    # TODO what does pady accomplish?
+    # export_exit_button.pack(fill=tk.X, pady=5)
     export_exit_button.pack(fill=tk.X)
 
     # Creating a frame within the canvas for the images
