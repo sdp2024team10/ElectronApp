@@ -202,7 +202,7 @@ if __name__ == "__main__":
     else:
         initial_calibration = None
 
-    print(initial_calibration)
+    print(f"given initial calibration: {initial_calibration}")
 
     root = tk.Tk()
     root.withdraw()  # This hides the root window
