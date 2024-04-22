@@ -51,11 +51,8 @@ if __name__ == "__main__":
 
     rows = preprocess(
         image,
-        preprocessing_calibration["num_rows"],
         preprocessing_calibration["black_white_thresh"],
-        preprocessing_calibration["rotation_deg"],
         preprocessing_calibration["crop_coords"],
-        preprocessing_calibration["trim_sizes_px"],
     )
 
     # Execute predictions in parallel
