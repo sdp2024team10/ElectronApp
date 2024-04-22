@@ -10,13 +10,6 @@ from preprocess import preprocess
 # required for nodejs to parse in real time
 sys.stdout.reconfigure(line_buffering=True, write_through=True)
 
-CALIBRATION = {
-    "crop_coords": [None, None, None, None],
-    "black_white_thresh": None,
-    "trim_sizes_px": {"left": None, "right": None, "top": None, "bottom": None},
-    "num_rows": None,
-}
-
 
 class SelectCoordinates:
     def __init__(self, master, image: Image, initial_calibration: dict = None):
@@ -48,7 +41,6 @@ class SelectCoordinates:
                 (width * 0.75, height * 0.75),
                 (width * 0.25, height * 0.75),
             ]
-            CALIBRATION["crop_coords"] = self.points
         else:
             self.points = starting_points
         self.draw_points_and_lines()
@@ -87,7 +79,6 @@ class SelectCoordinates:
             new_y = min(max(event.y, 0), height)
             self.points[self.dragging_point] = (new_x, new_y)
             self.draw_points_and_lines()
-            CALIBRATION["crop_coords"] = self.points
 
     def on_release(self, event):
         self.dragging_point = None
