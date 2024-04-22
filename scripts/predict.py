@@ -20,6 +20,18 @@ device = torch.device("cpu")
 model = model.to(device)
 
 
+def filter_result(result: str) -> str:
+    output = result
+    # common mistakes by prediction
+    if " n " in output:
+        output = output.replace(" n ", " 1 1 ")
+    if " a " in output:
+        output = output.replace(" a ", " 2 ")
+    if "=" in output:
+        output = output.replace("=", "-")
+    return output
+
+
 def predict(image: Image, index: int, start_time: datetime.datetime) -> dict:
     img_tensor = ToTensor()(image)
     mask = torch.zeros_like(img_tensor, dtype=torch.bool)
@@ -27,7 +39,7 @@ def predict(image: Image, index: int, start_time: datetime.datetime) -> dict:
     hyp = model.approximate_joint_search(img_tensor.unsqueeze(0), mask)[0]
     pred_latex = vocab.indices2label(hyp.seq)
     prediction_time = datetime.datetime.now() - start_time
-
+    pred_latex = filter_result(pred_latex)
     return {"index": index, "latex": pred_latex, "time": str(prediction_time)}
 
 
