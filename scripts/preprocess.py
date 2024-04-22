@@ -63,7 +63,10 @@ def trim(image: Image, trim_sizes_px: dict) -> Image:
 def crop(image: Image, crop_coords) -> Image:
     cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
     pts1 = np.float32(crop_coords)
-    width, height = cv_image.shape[1], cv_image.shape[0]
+    # distance between top left and top right
+    width = int(crop_coords[1][0] - crop_coords[0][0])
+    # distance between bottom left and top left
+    height = int(crop_coords[3][1] - crop_coords[0][1])
     pts2 = np.float32([[0, 0], [width, 0], [width, height], [0, height]])
     matrix = cv2.getPerspectiveTransform(pts1, pts2)
     result = cv2.warpPerspective(cv_image, matrix, (width, height))
