@@ -214,11 +214,14 @@ if __name__ == "__main__":
     print(initial_calibration)
 
     root = tk.Tk()
-    root.title("Calibration")
-    root.geometry("200x55")
+    root.withdraw()  # This hides the root window
 
     def do_nothing():
         return
+
+    buttons_window = tk.Toplevel(root)
+    buttons_window.title("Calibration")
+    buttons_window.geometry("200x55")
 
     select_coords_window = tk.Toplevel(root)
     select_coords_window.title("Select Points")
@@ -261,7 +264,8 @@ if __name__ == "__main__":
         for output_image in preprocessing_output:
             output_image_frame.add_image(output_image)
 
-    test_button = ttk.Button(root, text="Test", command=run_preprocessing)
+
+    test_button = ttk.Button(buttons_window, text="Test", command=run_preprocessing)
     test_button.pack(fill=tk.X)
 
     def export_exit():
@@ -288,7 +292,9 @@ if __name__ == "__main__":
         root.destroy()
         quit()
 
-    export_exit_button = ttk.Button(root, text="Save & Exit", command=export_exit)
+    export_exit_button = ttk.Button(
+        buttons_window, text="Save & Exit", command=export_exit
+    )
     export_exit_button.pack(fill=tk.X)
 
     # Creating a frame within the canvas for the images
