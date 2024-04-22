@@ -93,11 +93,9 @@ function spawnAndHandleLines(
   });
   thisProcess.on("close", (code) => {
     console.log(`PID ${thisProcess.pid} exited with code ${code}`);
-    log(`runningProcesses of this name before: ${runningProcesses[name]}`); // DELETEME
     runningProcesses[name] = runningProcesses[name].filter(
       (x) => x !== thisProcess.pid
     );
-    log(`runningProcesses of this name after: ${runningProcesses[name]}`); // DELETEME
     exit_handler(code, thisProcess.pid);
   });
 }
