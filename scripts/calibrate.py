@@ -7,6 +7,9 @@ import sys
 import json
 from preprocess import preprocess
 
+# required for nodejs to parse in real time
+sys.stdout.reconfigure(line_buffering=True, write_through=True)
+
 CALIBRATION = {
     "crop_coords": [None, None, None, None],
     "black_white_thresh": None,
