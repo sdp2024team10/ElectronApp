@@ -254,6 +254,7 @@ if __name__ == "__main__":
     def close_all_windows():
         print("Closing all windows...")
         root.destroy()
+        sys.exit(1)
 
     select_coords_window = tk.Toplevel(root)
     select_coords_window.title("Select Points")
