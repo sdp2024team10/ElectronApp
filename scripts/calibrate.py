@@ -11,6 +11,10 @@ from preprocess import preprocess
 sys.stdout.reconfigure(line_buffering=True, write_through=True)
 
 
+class PageCornerLocationError(Exception):
+    pass
+
+
 class SelectCoordinates:
     def __init__(self, master, image: Image, initial_calibration: dict = None):
         self.master = master
@@ -35,15 +39,21 @@ class SelectCoordinates:
 
     def set_initial_points(self, starting_points: list = None):
         width, height = self.image.size
-        if starting_points == None:
-            self.points = [
-                (width * 0.25, height * 0.25),
-                (width * 0.75, height * 0.25),
-                (width * 0.75, height * 0.75),
-                (width * 0.25, height * 0.75),
-            ]
-        else:
+        if starting_points is not None:
             self.points = starting_points
+        else:
+            try:
+                self.points = self.locate_page_corners()
+                print("successfully located page corners", file=sys.stderr)
+            except PageCornerLocationError as e:
+                print("failed to locate page corners!", file=sys.stderr)
+                print(e, file=sys.stderr)
+                self.points = [
+                    (width * 0.25, height * 0.25),
+                    (width * 0.75, height * 0.25),
+                    (width * 0.75, height * 0.75),
+                    (width * 0.25, height * 0.75),
+                ]
         self.draw_points_and_lines()
 
     def draw_points_and_lines(self):
@@ -83,6 +93,41 @@ class SelectCoordinates:
 
     def on_release(self, event):
         self.dragging_point = None
+
+    def locate_page_corners(self):
+        grayscale_img = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2GRAY)
+        # I am blindly copying these magic numbers from opencv documentation
+        binary_img = cv2.adaptiveThreshold(
+            grayscale_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+        )
+        contours, _ = cv2.findContours(
+            binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
+        # Sort contours based on area in descending order
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
+        # # Skip the first (outermost) contour, which is the image boundary
+        # contours = contours[1:]
+        # in my testing this was not the case, the first contour was the one I wanted
+        page_corners = None
+        for contour in contours:
+            peri = cv2.arcLength(contour, True)
+            approximated_polygon = cv2.approxPolyDP(contour, 0.02 * peri, True)
+            # If our approximated contour has four points, we can assume we have found the paper
+            if len(approximated_polygon) == 4:
+                page_corners = approximated_polygon
+                break
+        if page_corners is not None:
+            sorted_page_corner_coordinates = sorted(
+                [(int(x[0][0]), int(x[0][1])) for x in page_corners]
+            )
+            # x axis is sorted with higher priority than y axis
+            top_left = sorted_page_corner_coordinates[0]
+            bottom_left = sorted_page_corner_coordinates[1]
+            top_right = sorted_page_corner_coordinates[2]
+            bottom_right = sorted_page_corner_coordinates[3]
+            return [top_left, top_right, bottom_right, bottom_left]
+        else:
+            raise PageCornerLocationError("No quadrilateral contour detected.")
 
 
 class CalibrationOptions:
