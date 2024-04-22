@@ -7,6 +7,7 @@ import cv2
 import sys
 import json
 import threading
+import math
 from preprocess import preprocess
 
 # required for nodejs to parse in real time
@@ -118,6 +119,8 @@ class SelectCoordinates:
 
     def locate_page_corners(self):
         grayscale_img = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2GRAY)
+        length, width = grayscale_img.shape
+        image_area = length * width
         # I am blindly copying these magic numbers from opencv documentation
         binary_img = cv2.adaptiveThreshold(
             grayscale_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
@@ -125,10 +128,15 @@ class SelectCoordinates:
         contours, _ = cv2.findContours(
             binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
         )
+        # assume that page contour must be > 60% of the total area and less thn the entire area
+        contours = [
+            x
+            for x in contours
+            if cv2.contourArea(x) > 0.6 * image_area
+            and cv2.contourArea(x) < 0.95 * image_area
+        ]
         # Sort contours based on area in descending order
         contours = sorted(contours, key=cv2.contourArea, reverse=True)
-        # # Skip the first (outermost) contour, which is the image boundary
-        # contours = contours[1:]
         # in my testing this was not the case, the first contour was the one I wanted
         page_corners = None
         for contour in contours:
@@ -139,14 +147,36 @@ class SelectCoordinates:
                 page_corners = approximated_polygon
                 break
         if page_corners is not None:
-            sorted_page_corner_coordinates = sorted(
-                [(int(x[0][0]), int(x[0][1])) for x in page_corners]
-            )
-            # x axis is sorted with higher priority than y axis
-            top_left = sorted_page_corner_coordinates[0]
-            bottom_left = sorted_page_corner_coordinates[1]
-            top_right = sorted_page_corner_coordinates[2]
-            bottom_right = sorted_page_corner_coordinates[3]
+            page_corner_coordinates = [
+                (int(x[0][0]), int(x[0][1])) for x in page_corners
+            ]
+
+            # sort the coordinates based on their distance from the top left corner
+            def hypotnuse(lengths):
+                return math.sqrt(lengths[0] ** 2 + lengths[1] ** 2)
+
+            sorted_coords = sorted(page_corner_coordinates, key=hypotnuse)
+            # the page is turned on its side
+            top_left, bottom_left, top_right, bottom_right = sorted_coords
+
+            # print(
+            #     json.dumps(
+            #         {
+            #             "sorted_coords": sorted_coords,
+            #             "top left": top_left,
+            #             "bottom left": bottom_left,
+            #             "top right": top_right,
+            #             "bottom right": bottom_right,
+            #         }
+            #     )
+            # )
+            if not (
+                top_left[0] < top_right[0]
+                and bottom_left[0] < bottom_right[0]
+                and top_left[1] < bottom_left[1]
+                and top_right[1] < bottom_right[1]
+            ):
+                raise PageCornerLocationError("page corners are out of order!")
             return [top_left, top_right, bottom_right, bottom_left]
         else:
             raise PageCornerLocationError("No quadrilateral contour detected.")
