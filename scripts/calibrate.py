@@ -268,7 +268,6 @@ if __name__ == "__main__":
         for output_image in preprocessing_output:
             output_image_frame.add_image(output_image)
 
-
     test_button = ttk.Button(buttons_window, text="Test", command=run_preprocessing)
     test_button.pack(fill=tk.X)
 
