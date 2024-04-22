@@ -60,7 +60,7 @@ function spawnAndHandleLines(
   stdin_str = ""
 ) {
   log(
-    `Starting binary ${binary} with args ${JSON.stringify(
+    `Starting binary "${binary}" with args ${JSON.stringify(
       args
     )} and options ${JSON.stringify(options)}`
   );
@@ -153,6 +153,7 @@ function handleCalibrateStdoutLine(calibrateStdoutLine) {
   }
   if (!found_calibration) {
     log("JSON.parse(calibration stdout line) returned falsey!");
+    return;
   }
   calibration = found_calibration;
   log("calibration received from calibrate.py");
