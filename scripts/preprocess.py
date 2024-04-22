@@ -5,7 +5,7 @@ import sys
 import cv2
 
 ROTATION_DEG = 270
-NUM_ROWS = 10
+NUM_ROWS = 11
 GAUSSIAN_BLUR_KERNEL_SIZE = 17
 
 
