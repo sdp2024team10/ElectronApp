@@ -13,7 +13,7 @@ requires HTML elements with the following IDs:
   chart (canvas)
 */
 
-const NUM_EXPRESSIONS = 10;
+const NUM_EXPRESSIONS = 11;
 require("../app/jquery1.7.2.min.js");
 require("../node_modules/mathquill/build/mathquill.js");
 require("dotenv").config({ path: ".env-base" });
