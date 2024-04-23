@@ -70,10 +70,10 @@ class SelectCoordinates:
                 print("failed to locate page corners!", file=sys.stderr)
                 print(e, file=sys.stderr)
                 self.points = [
-                    (width * 0.25, height * 0.25),
-                    (width * 0.75, height * 0.25),
-                    (width * 0.75, height * 0.75),
-                    (width * 0.25, height * 0.75),
+                    (width * 0.05, height * 0.05),
+                    (width * 0.95, height * 0.05),
+                    (width * 0.95, height * 0.95),
+                    (width * 0.05, height * 0.95),
                 ]
         self.draw_points_and_lines()
 
