@@ -49,8 +49,14 @@ for i, expr in enumerate(_input["expressions"]):
 graphs = []
 for latex_expr in latex_expressions_not_blank:
     sympy_expr = parse_latex(latex_expr)
-    func = sp.lambdify(unknown_var["name"], sympy_expr, "numpy")
-    graphs.append(func(samples))
+    try:
+        func = sp.lambdify(unknown_var["name"], sympy_expr, "numpy")
+    except TypeError:
+        raise RuntimeError(f'unable to convert expression to function: "{latex_expr}"')
+    try:
+        graphs.append(func(samples))
+    except TypeError:
+        raise RuntimeError(f'unable to evaluate expression "{latex_expr}"')
 
 for i in range(1, len(graphs)):
     try:
