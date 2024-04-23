@@ -27,6 +27,14 @@ def filter_result(result: str) -> str:
         output = output.replace(" n ", " 1 1 ")
     if " a " in output:
         output = output.replace(" a ", " 2 ")
+    if " X " in output:
+        output = output.replace(" X ", " x")
+    if " q " in output:
+        output = output.replace(" q ", " 9")
+    if " d " in output:
+        output = output.replace(" d ", " 2 ")
+    if " k " in output:
+        output = output.replace(" k ", " 8 ")
     if "=" in output:
         output = output.replace("=", "-")
     return output
