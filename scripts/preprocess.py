@@ -11,6 +11,12 @@ GAUSSIAN_BLUR_KERNEL_SIZE = 17
 
 def convert_black_white(image: Image, threshold=150):
     return image.convert("L").point(lambda x: 255 if x < threshold else 0, "1")
+    # cv_img = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2GRAY)
+    # cv_img = cv2.GaussianBlur(cv_img, (19, 19), 0)
+    # binary_cv_img = cv2.adaptiveThreshold(
+    #     cv_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+    # )
+    # return Image.fromarray(binary_cv_img)
 
 
 def split_rows(image: Image, num_segments: int) -> List[Image]:
